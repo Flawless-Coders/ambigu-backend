@@ -29,6 +29,6 @@ public class Waiter {
     private boolean isLeader;
     @Schema(description = "Shift that the waiter is working")
     private Shift shift;
-    @Schema(description = "Average rating of the waiter given by the clients")
+    @Schema(description = "Average rating of the waiter")
     private int AvgRating;
 }
