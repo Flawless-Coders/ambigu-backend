@@ -7,7 +7,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import com.flawlesscoders.ambigu.user.base.User;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,14 +24,11 @@ public class Waiter {
     private String id;
     @DBRef
     @Schema(description = "DBRef to the user that is related to this waiter")
-    @NotNull(message = "El usuario es requerido")
     private User user;
     @Schema(description = "Used to know if the waiter is the leader of the shift")
-    @NotNull(message = "El estatus de lider es requerido")
     private boolean isLeader;
     @Schema(description = "Shift that the waiter is working")
-    @NotNull(message = "El turno es requerido")
     private Shift shift;
-    @Schema(description = "Average rating of the waiter")
+    @Schema(description = "Average rating of the waiter given by the clients")
     private int AvgRating;
 }
