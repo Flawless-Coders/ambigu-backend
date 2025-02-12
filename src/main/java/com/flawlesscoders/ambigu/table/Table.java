@@ -24,5 +24,6 @@ public class Table {
     private String tableIdentifier;
 
     @Schema(description = "Indicates the current status of the table")
-    private TableStatus status;  
+    private TableStatus status;  //enum
+
 }
