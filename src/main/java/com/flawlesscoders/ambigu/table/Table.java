@@ -25,10 +25,4 @@ public class Table {
 
     @Schema(description = "Indicates the current status of the table")
     private TableStatus status;  
-
-    public enum TableStatus {   
-        OCCUPIED,
-        UNOCCUPIED, 
-        DISABLED
-    }
 }
