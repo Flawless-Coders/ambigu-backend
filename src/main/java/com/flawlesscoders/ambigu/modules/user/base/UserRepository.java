@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.user.base;
+package com.flawlesscoders.ambigu.modules.user.base;
 
 import java.util.Optional;
 
@@ -8,5 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findByUsername(String username);
+    Optional<User> findByEmail(String email);
 
 }
