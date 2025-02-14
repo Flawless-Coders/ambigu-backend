@@ -1,8 +1,8 @@
-package com.flawlesscoders.ambigu.user.waiter;
+package com.flawlesscoders.ambigu.modules.user.waiter;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.flawlesscoders.ambigu.user.base.User;
+import com.flawlesscoders.ambigu.modules.user.base.User;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;

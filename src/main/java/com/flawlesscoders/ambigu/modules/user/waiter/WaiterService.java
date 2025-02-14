@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.user.waiter;
+package com.flawlesscoders.ambigu.modules.user.waiter;
 
 import java.util.List;
 

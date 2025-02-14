@@ -1,5 +1,6 @@
 package com.flawlesscoders.ambigu.modules.auth;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -18,4 +19,5 @@ public class AuthRequest {
     private String password;
 
     @Schema(description = "Platform from where the user is trying to login", example = "WEB, MOBILE")
+    private String platform;
 }

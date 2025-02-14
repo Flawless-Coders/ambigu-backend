@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.user.base;
+package com.flawlesscoders.ambigu.modules.user.base;
 
 public enum Role {
     ADMIN, 
