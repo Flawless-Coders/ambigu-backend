@@ -13,7 +13,7 @@ public class WaiterService {
     private final WaiterRepository waiterRepository;
 
     public List<Waiter> getAllWaiters() {
-        return waiterRepository.findAll();
+        return waiterRepository.findAllWaiters();
     }
 
     public List<Waiter> getAllActiveWaiters() {
