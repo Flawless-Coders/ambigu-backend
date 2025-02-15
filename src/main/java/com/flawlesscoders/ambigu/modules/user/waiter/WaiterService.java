@@ -1,10 +1,15 @@
 package com.flawlesscoders.ambigu.modules.user.waiter;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterDTO;
@@ -51,9 +56,17 @@ public class WaiterService {
         return ResponseEntity.ok(waiter);
     }
 
-    public ResponseEntity<Waiter> createWaiter(@Valid Waiter waiter) {
-        Waiter savedWaiter = waiterRepository.save(waiter);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedWaiter);
+    public ResponseEntity<Waiter> createWaiter(@Validated @RequestPart("waiter") Waiter waiter, @RequestPart("avatar") MultipartFile avatar) {
+        try {
+            if (!avatar.isEmpty()) {
+                String base64Image = Base64.getEncoder().encodeToString(avatar.getBytes());
+                waiter.setAvatarBase64(base64Image);
+            }
+            Waiter savedWaiter = waiterRepository.save(waiter);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedWaiter);
+        }catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al guardar la imagen");
+        }
     }
 
     public ResponseEntity<Void> updateWaiter(@Valid Waiter waiter) {
@@ -68,6 +81,20 @@ public class WaiterService {
         
         waiterRepository.save(existingWaiter);
         return ResponseEntity.ok().build();
+    }
+
+    public ResponseEntity<Void> updateWaiterAvatar (String id, MultipartFile avatar) {
+        try {
+            Waiter existingWaiter = waiterRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+
+            String base64Image = Base64.getEncoder().encodeToString(avatar.getBytes());
+            existingWaiter.setAvatarBase64(base64Image);
+            waiterRepository.save(existingWaiter);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al guardar la imagen");
+        }
     }
 
     public ResponseEntity<Void> changeWaiterStatus(String id) {

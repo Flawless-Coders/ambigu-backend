@@ -53,6 +53,9 @@ public abstract class User implements UserDetails {
     @NotNull(message = "El apellido materno es requerido")
     private String lastname_m;
 
+    @Schema(description = "User's Avatar")
+    private String avatarBase64;
+
     @Schema(description = "User's status")
     @NotNull(message = "El estatus es requerido")
     private boolean status;
