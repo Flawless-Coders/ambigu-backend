@@ -33,8 +33,7 @@ public class WaiterController {
     })
     @GetMapping
     public ResponseEntity<List<Waiter>> getAllWaiters() {
-        List<Waiter> waiters = waiterService.getAllWaiters();
-        return ResponseEntity.ok(waiters);
+        return waiterService.getAllWaiters();
     }
 
     //OBTAIN ALL ACTIVE WAITERS
@@ -45,8 +44,7 @@ public class WaiterController {
     })
     @GetMapping("/active")
     public ResponseEntity<List<Waiter>> getAllActiveWaiters() {
-        List<Waiter> waiters = waiterService.getAllActiveWaiters();
-        return ResponseEntity.ok(waiters);
+        return waiterService.getAllActiveWaiters();
     }
 
     //CREATE A WAITER
@@ -65,8 +63,7 @@ public class WaiterController {
                 schema = @Schema(implementation = Waiter.class))
         )
         Waiter waiter ) {
-        Waiter createdWaiter = waiterService.createWaiter(waiter);
-        return ResponseEntity.status(201).body(createdWaiter);
+        return waiterService.createWaiter(waiter);
     }
 
     //UPDATE A WAITER
@@ -77,7 +74,7 @@ public class WaiterController {
         @ApiResponse(responseCode = "404", description = "Waiter not found"),
     })
     @PutMapping("/update")
-    public ResponseEntity<Waiter> updateWaiter(
+    public ResponseEntity<Void> updateWaiter(
         @RequestBody 
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Waiter to be updated",
@@ -86,8 +83,7 @@ public class WaiterController {
                 schema = @Schema(implementation = Waiter.class))
         )
         Waiter waiter ) {
-        Waiter updatedWaiter = waiterService.updateWaiter(waiter);
-        return ResponseEntity.ok(updatedWaiter);
+        return waiterService.updateWaiter(waiter);
     }
 
     //CHANGE STATUS OF A WAITER
@@ -97,11 +93,10 @@ public class WaiterController {
         @ApiResponse(responseCode = "404", description = "Waiter not found"),
     })
     @PutMapping("/status/{id}")
-    public ResponseEntity<Waiter> changeWaiterStatus(
+    public ResponseEntity<Void> changeWaiterStatus(
         @Parameter(description = "Waiter's id", required = true)
         @PathVariable String id ) {
-        Waiter updatedWaiter = waiterService.changeWaiterStatus(id);
-        return ResponseEntity.ok(updatedWaiter);
+        return waiterService.changeWaiterStatus(id);
     }
 
     
