@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterDTO;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +34,7 @@ public class WaiterController {
         @ApiResponse(responseCode = "200", description = "Waiters obtained"),
     })
     @GetMapping
-    public ResponseEntity<List<Waiter>> getAllWaiters() {
+    public ResponseEntity<List<GetWaiterDTO>> getAllWaiters() {
         return waiterService.getAllWaiters();
     }
 
@@ -43,7 +45,7 @@ public class WaiterController {
         @ApiResponse(responseCode = "404", description = "No active waiters found"),
     })
     @GetMapping("/active")
-    public ResponseEntity<List<Waiter>> getAllActiveWaiters() {
+    public ResponseEntity<List<GetWaiterDTO>> getAllActiveWaiters() {
         return waiterService.getAllActiveWaiters();
     }
 

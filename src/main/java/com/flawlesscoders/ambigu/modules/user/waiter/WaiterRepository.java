@@ -15,4 +15,6 @@ public interface WaiterRepository extends MongoRepository<Waiter, String> {
     */
     @Query("{ '_class': 'com.flawlesscoders.ambigu.modules.user.waiter.Waiter' }")
     List<Waiter> findAllByStatusTrue();
+
+    
 }

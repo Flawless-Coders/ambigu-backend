@@ -2,7 +2,6 @@ package com.flawlesscoders.ambigu.modules.user.admin;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient.ResponseSpec;
 
 import com.flawlesscoders.ambigu.modules.user.admin.DTO.GetAdminDTO;
 
