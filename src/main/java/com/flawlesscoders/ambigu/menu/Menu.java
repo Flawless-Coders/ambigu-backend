@@ -34,5 +34,13 @@ public class Menu {
 
     @Schema(description = "List containing the identifiers of the dishes included in the menu.")
     private List<String> dishes;
+
+    private List<String> categories;
+    
+    private String photoId;
+
+
+    
+
     
 }

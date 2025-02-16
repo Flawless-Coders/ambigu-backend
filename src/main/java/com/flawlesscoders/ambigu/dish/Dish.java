@@ -26,6 +26,9 @@ public class Dish {
     @Schema(description = "Brief description of the dish.")
     private String description;
 
+    @Schema(description = "status of the dish")
+    private boolean status;
+
     @NotBlank(message = "La imagen del platillo es obligatoria.")
     @Schema(description = "URL of the dish image.")
     private String image;
