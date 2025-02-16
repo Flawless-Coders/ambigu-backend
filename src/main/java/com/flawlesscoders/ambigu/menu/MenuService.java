@@ -37,16 +37,6 @@ public class MenuService {
     }
 
 
-/**
-     * Gets the menus based on their status (active/inactive).
-     * @param status The status of the menu.
-     * @return A list of menus with the specified status.
-     */
-
-    public List<Menu> getByStatus(boolean status){
-        return menuRepository.findByStatus(status);
-     }
-
     /**
      * Gets the categories of a menu.
      * @param menuId The ID of the menu.

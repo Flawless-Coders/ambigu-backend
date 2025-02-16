@@ -37,17 +37,6 @@ public class MenuController {
     private final MenuService menuService;
     private final FileService fileService;
 
-    @Operation(summary = "Get all menus", description = "Returns a list of menus based on their status")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "List retrieved successfully", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = Menu.class)) }),
-        @ApiResponse(responseCode = "500", description = "Server error")
-    })
-    @GetMapping("/findAll/{status}")
-    public ResponseEntity<List<Menu>> findAll(@PathVariable boolean status){
-        List<Menu> menus = menuService.getByStatus(status);
-        return ResponseEntity.ok(menus);
-    }
-
     @Operation(summary = "Get a menu by ID", description = "Returns a menu based on its ID")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Menu found", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = Menu.class)) }),
