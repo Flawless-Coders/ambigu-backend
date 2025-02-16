@@ -67,9 +67,10 @@ public class MenuService {
      * Gets the dishes of a menu by category.
      * @param menuId The ID of the menu.
      * @param categoryId The ID of the category.
+     * @param status The status of the menu.
      * @return A list of dishes in the specified category.
      */
-     public List<Dish> getDishesByMenu(String menuId, String categoryId){
+     public List<Dish> getDishesByMenu(String menuId, String categoryId, boolean status){
         Menu menu = menuRepository.findById(menuId).
         orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
 
@@ -81,7 +82,7 @@ public class MenuService {
         List<Dish> activeDish = new ArrayList<>();
 
         for(Dish dish : dishes){
-            if(dish.isStatus() && dish.getCategory().equals(categoryId)){
+            if(dish.isStatus() && dish.getCategory().equals(categoryId) && menu.isStatus()==status){
                 activeDish.add(dish);
             }
         }

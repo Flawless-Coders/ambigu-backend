@@ -83,14 +83,14 @@ public class MenuController {
                 .body((Resource) gridFsResource); 
     }
 
-    @Operation(summary = "Get dishes by menu and category", description = "Returns a list of dishes belonging to a specific menu and category")
+    @Operation(summary = "Get dishes by menu, category and the status of the menu", description = "Returns a list of dishes belonging to a specific menu and category based on their menu status (enabled/disabled)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Dish list retrieved successfully"),
         @ApiResponse(responseCode = "404", description = "Menu or category not found")
     })
-        @GetMapping("/menu/{menuId}/category/{categoryId}")
-        public ResponseEntity<List<Dish>> getDishesByMenu(@PathVariable String menuId, @PathVariable String categoryId){
-        return ResponseEntity.ok(menuService.getDishesByMenu(menuId, categoryId));
+        @GetMapping("/getDishes/{menuId}/{categoryId}/{status}")
+        public ResponseEntity<List<Dish>> getDishesByMenu(@PathVariable String menuId, @PathVariable String categoryId, @PathVariable boolean status){
+        return ResponseEntity.ok(menuService.getDishesByMenu(menuId, categoryId, status));
         }
     
         @Operation(summary = "Get categories by menu", description = "Returns a list of categories belonging to a specific menu")
