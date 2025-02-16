@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.user.waiter;
+package com.flawlesscoders.ambigu.user.waiter.models;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;

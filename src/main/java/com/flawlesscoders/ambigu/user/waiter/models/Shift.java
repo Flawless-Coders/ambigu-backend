@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.user.waiter;
+package com.flawlesscoders.ambigu.user.waiter.models;
 
 public enum Shift {
     MORNING, 
