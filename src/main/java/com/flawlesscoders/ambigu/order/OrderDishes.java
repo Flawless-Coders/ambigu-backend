@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.order.models;
+package com.flawlesscoders.ambigu.order;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;

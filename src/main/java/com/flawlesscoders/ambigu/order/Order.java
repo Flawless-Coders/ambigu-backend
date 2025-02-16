@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.order.models;
+package com.flawlesscoders.ambigu.order;
 
 import java.util.Date;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.order.modify.controller;
+package com.flawlesscoders.ambigu.order.modify;
 
 import java.util.List;
 
@@ -9,9 +9,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.flawlesscoders.ambigu.order.modify.model.ModifyRequest;
-import com.flawlesscoders.ambigu.order.modify.service.ModifyRequestService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

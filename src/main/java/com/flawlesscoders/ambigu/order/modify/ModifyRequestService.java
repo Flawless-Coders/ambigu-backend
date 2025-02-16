@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.order.modify.service;
+package com.flawlesscoders.ambigu.order.modify;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -7,10 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.flawlesscoders.ambigu.order.models.Order;
-import com.flawlesscoders.ambigu.order.modify.model.ModifyRequest;
-import com.flawlesscoders.ambigu.order.modify.repository.ModifyRequestRepository;
-import com.flawlesscoders.ambigu.order.repositories.OrderRepository;
+import com.flawlesscoders.ambigu.order.Order;
+import com.flawlesscoders.ambigu.order.OrderRepository;
 
 import lombok.AllArgsConstructor;
 

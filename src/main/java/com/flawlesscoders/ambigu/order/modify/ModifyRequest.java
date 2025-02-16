@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.order.modify.model;
+package com.flawlesscoders.ambigu.order.modify;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +12,7 @@ import java.util.List;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.flawlesscoders.ambigu.order.models.OrderDishes;
+import com.flawlesscoders.ambigu.order.OrderDishes;
 
 @Document(collection = "modify_requests")
 @Data
