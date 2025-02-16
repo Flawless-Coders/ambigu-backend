@@ -2,11 +2,15 @@ package com.flawlesscoders.ambigu.modules.user.admin;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.flawlesscoders.ambigu.modules.user.admin.DTO.GetAdminDTO;
 
@@ -46,6 +50,21 @@ public class AdminController {
         @RequestBody Admin admin) {
         adminService.updateAdmin(admin);
         return ResponseEntity.ok().build();
+    }
+
+    //UPDATE ADMIN AVATAR
+    @Operation(summary = "Updates admin avatar")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Admin avatar updated"),
+        @ApiResponse(responseCode = "404", description = "Admin not found"),
+    })
+    @PatchMapping("/avatar/{id}")
+    public ResponseEntity<Void> updateAdminAvatar(
+        @Parameter(description = "Admin id", required = true) 
+        @PathVariable String id,
+        @RequestPart("avatar") MultipartFile avatar
+        ) {
+        return adminService.updateAdminAvatar(id, avatar);
     }
 
 

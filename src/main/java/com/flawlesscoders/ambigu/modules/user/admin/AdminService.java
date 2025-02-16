@@ -2,9 +2,13 @@ package com.flawlesscoders.ambigu.modules.user.admin;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.flawlesscoders.ambigu.modules.user.admin.DTO.GetAdminDTO;
 
+import io.micrometer.core.ipc.http.HttpSender.Response;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -23,12 +27,12 @@ public class AdminService {
     }
 
     public ResponseEntity<GetAdminDTO> getAdminById(String id) {
-        Admin admin = adminRepository.findById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
+        Admin admin = adminRepository.findAdminById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
         return ResponseEntity.ok(transformAdminToDTO(admin));
     }
 
     public ResponseEntity<Void> updateAdmin(Admin admin){
-        Admin existingAdmin = adminRepository.findById(admin.getId()).orElseThrow(() -> new RuntimeException("Admin not found"));
+        Admin existingAdmin = adminRepository.findAdminById(admin.getId()).orElseThrow(() -> new RuntimeException("Admin not found"));
         existingAdmin.setName(admin.getName());
         existingAdmin.setLastname_p(admin.getLastname_p());
         existingAdmin.setLastname_m(admin.getLastname_m());
@@ -39,10 +43,22 @@ public class AdminService {
     }
 
     public ResponseEntity<Void> updateAdminPassword(Admin admin){
-        Admin existingAdmin = adminRepository.findById(admin.getId()).orElseThrow(() -> new RuntimeException("Admin not found"));
+        Admin existingAdmin = adminRepository.findAdminById(admin.getId()).orElseThrow(() -> new RuntimeException("Admin not found"));
         existingAdmin.setPassword(admin.getPassword());
         adminRepository.save(existingAdmin);
         return ResponseEntity.ok().build();
+    }
+
+    public ResponseEntity<Void> updateAdminAvatar(String id, MultipartFile avatar) {
+        try{
+            Admin existingAdmin = adminRepository.findAdminById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
+            String base64imag = Base64.getEncoder().encodeToString(avatar.getBytes());
+            existingAdmin.setAvatarBase64(base64imag);
+            adminRepository.save(existingAdmin);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
+            throw new RuntimeException("Error uploading image");
+    }
     }
 
 }
