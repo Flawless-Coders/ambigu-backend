@@ -2,6 +2,8 @@ package com.flawlesscoders.ambigu.utils.security;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
@@ -19,9 +21,21 @@ public class JwtTokenProvider {
     //Convert the 'SECRET' to a Secure Key
     private static final Key SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes());
 
+    //Creamos los CLAIMS 
+    public Map<String, Object> generateClaims(String username, String role, Boolean isLeader) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
+
+        if("WAITER".equals(role)){
+            claims.put("isLeader", isLeader);
+        }
+        return claims;
+    }
+
     //Generate a secure JWT token
-    public String generateToken(String username) {
+    public String generateToken(String username, String role, Boolean isLeader) {
         return Jwts.builder()
+                .setClaims(generateClaims(username, role, isLeader))
                 .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))

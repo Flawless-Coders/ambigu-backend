@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.flawlesscoders.ambigu.modules.user.base.Role;
 import com.flawlesscoders.ambigu.modules.user.base.User;
 import com.flawlesscoders.ambigu.modules.user.base.UserRepository;
+import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
 import com.flawlesscoders.ambigu.utils.security.JwtTokenProvider;
 
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,12 @@ public class AuthService {
             throw new IllegalArgumentException("Los meseros solo pueden iniciar sesión desde la plataforma móvil");
         }
 
-        return jwtTokenProvider.generateToken(user.getEmail());
+        Boolean isLeader = null;
+        if (user instanceof Waiter) {
+            Waiter waiter = (Waiter) user;
+            isLeader = waiter.isLeader();
+        }
+
+        return jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name(), isLeader);
     }
 }
