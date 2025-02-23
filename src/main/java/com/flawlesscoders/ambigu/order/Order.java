@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.flawlesscoders.ambigu.user.waiter.Waiter;
+import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
