@@ -21,6 +21,7 @@ public class Category {
     private String id;
 
     @NotBlank(message = "El nombre de la categoría es obligatorio.")
+    @Schema(description = "Name of the category.")
     private String name;
 
     @NotBlank(message = "La imagen de la categoría es obligatoria.")

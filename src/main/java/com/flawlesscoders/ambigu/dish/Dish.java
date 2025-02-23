@@ -36,4 +36,8 @@ public class Dish {
     @NotBlank(message = "La categoría del platillo es obligatoria.")
     @Schema(description = "Identifier of the category to which the dish belongs.")
     private String category;
+
+    @NotBlank(message = "Estado del platillo (activo o inactivo).")
+    @Schema(description = "Indicates whether the dish is active or inactive.")
+    private boolean status;
 }
