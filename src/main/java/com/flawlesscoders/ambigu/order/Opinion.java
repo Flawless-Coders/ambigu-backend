@@ -1,8 +1,9 @@
 package com.flawlesscoders.ambigu.order;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,9 +15,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @Schema(description = "Model that repsents the base opinion of the order")
 public class Opinion {
-    @Size(min = 1, message = "La calificación no puede quedar vacía")
-    private int rating;
+    @NotNull(message = "La calificación no puede estar vacía")
+    @Min(value = 1, message = "La calificación no puede ser menor a 1")
+    private Integer qualification;
 
-    @NotBlank(message = "Se debe de agregar un comentario acerca de su experiencia")
+    @NotNull(message = "El comentario no puede estar vacío")
+    @NotEmpty(message = "El comentario no puede estar vacío")
     private String comment;
 }
