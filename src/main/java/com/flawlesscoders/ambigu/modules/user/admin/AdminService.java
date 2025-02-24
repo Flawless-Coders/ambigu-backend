@@ -5,13 +5,10 @@ import java.util.Base64;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.flawlesscoders.ambigu.modules.user.admin.DTO.GetAdminDTO;
 
-import io.micrometer.core.ipc.http.HttpSender.Response;
-import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 
 @Service
