@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterDTO;
+import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterWAvatarDTO;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -64,6 +65,19 @@ public class WaiterController {
         @Parameter(description = "Waiter's email", required = true)
         @PathVariable String email) {
         return waiterService.getWaiterByEmail(email);
+    }
+
+    //OBTAIN WAITER WITH AVATAR BY EMAIL
+    @Operation(summary = "Obtains a waiter with avatar by email")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Waiter obtained"),
+        @ApiResponse(responseCode = "404", description = "Waiter not found"),
+    })
+    @GetMapping("/email/avatar/{email}")
+    public ResponseEntity<GetWaiterWAvatarDTO> getWaiterWAvatarByEmail(
+        @Parameter(description = "Waiter's email", required = true)
+        @PathVariable String email) {
+        return waiterService.getWaiterWAvatarByEmail(email);
     }
 
     //CREATE A WAITER

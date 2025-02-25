@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterDTO;
+import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterWAvatarDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,20 @@ public class WaiterService {
             .lastname_p(waiter.getLastname_p())
             .lastname_m(waiter.getLastname_m())
             .email(waiter.getEmail())
+            .isLeader(waiter.isLeader())
+            .shift(waiter.getShift())
+            .AvgRating(waiter.getAvgRating())
+            .build();
+    }
+
+    private GetWaiterWAvatarDTO toGetWaiterWAvatarDTO(Waiter waiter) {
+        return GetWaiterWAvatarDTO.builder()
+            .id(waiter.getId())
+            .name(waiter.getName())
+            .lastname_p(waiter.getLastname_p())
+            .lastname_m(waiter.getLastname_m())
+            .email(waiter.getEmail())
+            .avatarBase64(waiter.getAvatarBase64())
             .isLeader(waiter.isLeader())
             .shift(waiter.getShift())
             .AvgRating(waiter.getAvgRating())
@@ -60,6 +75,12 @@ public class WaiterService {
         Waiter waiter = waiterRepository.findByEmail(email)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Waiter not found"));
         return ResponseEntity.ok(toGetWaiterDTO(waiter));
+    }
+
+    public ResponseEntity<GetWaiterWAvatarDTO> getWaiterWAvatarByEmail(String email) {
+        Waiter waiter = waiterRepository.findByEmail(email)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Waiter not found"));
+        return ResponseEntity.ok(toGetWaiterWAvatarDTO(waiter));
     }
 
     public ResponseEntity<Waiter> createWaiter(@Validated @RequestPart("waiter") Waiter waiter, @RequestPart("avatar") MultipartFile avatar) {
