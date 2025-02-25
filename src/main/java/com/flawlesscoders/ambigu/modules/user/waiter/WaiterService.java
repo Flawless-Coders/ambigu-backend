@@ -56,6 +56,12 @@ public class WaiterService {
         return ResponseEntity.ok(waiter);
     }
 
+    public ResponseEntity<GetWaiterDTO> getWaiterByEmail(String email) {
+        Waiter waiter = waiterRepository.findByEmail(email)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Waiter not found"));
+        return ResponseEntity.ok(toGetWaiterDTO(waiter));
+    }
+
     public ResponseEntity<Waiter> createWaiter(@Validated @RequestPart("waiter") Waiter waiter, @RequestPart("avatar") MultipartFile avatar) {
         try {
             if (!avatar.isEmpty()) {

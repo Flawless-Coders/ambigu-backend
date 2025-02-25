@@ -53,6 +53,19 @@ public class WaiterController {
         return waiterService.getAllActiveWaiters();
     }
 
+    //OBTAIN WAITER BY EMAIL
+    @Operation(summary = "Obtains a waiter by email")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Waiter obtained"),
+        @ApiResponse(responseCode = "404", description = "Waiter not found"),
+    })
+    @GetMapping("/email/{email}")
+    public ResponseEntity<GetWaiterDTO> getWaiterByEmail(
+        @Parameter(description = "Waiter's email", required = true)
+        @PathVariable String email) {
+        return waiterService.getWaiterByEmail(email);
+    }
+
     //CREATE A WAITER
     @Operation(summary = "Creates a waiter")
     @ApiResponses(value = {
