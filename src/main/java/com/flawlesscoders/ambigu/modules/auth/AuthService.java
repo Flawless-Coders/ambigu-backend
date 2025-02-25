@@ -49,4 +49,5 @@ public class AuthService {
 
         return jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name(), isLeader);
     }
+
 }

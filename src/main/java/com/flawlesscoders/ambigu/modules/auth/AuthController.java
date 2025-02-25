@@ -1,5 +1,6 @@
 package com.flawlesscoders.ambigu.modules.auth;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,8 +11,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.flawlesscoders.ambigu.modules.auth.BlacklistToken.BlacklistToken;
+import com.flawlesscoders.ambigu.modules.auth.BlacklistToken.BlacklistTokenRepository;
+import com.flawlesscoders.ambigu.utils.security.JwtTokenProvider;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +26,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+
+    private final BlacklistTokenRepository blacklistTokenRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Operation(summary ="Login with platform restriction")
     @ApiResponses(value = {
@@ -36,5 +45,16 @@ public class AuthController {
         response.put("token", token);
         return ResponseEntity.ok(response);
 
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        String token = request.getHeader("Authorization").substring(7);
+
+        Date expirationDate = jwtTokenProvider.getExpirationDateFromToken(token);
+
+        blacklistTokenRepository.save(new BlacklistToken(token, expirationDate));
+
+        return ResponseEntity.ok("Logout exitoso");
     }
 }
