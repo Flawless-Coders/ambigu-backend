@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -57,4 +58,17 @@ public class AuthController {
 
         return ResponseEntity.ok("Logout exitoso");
     }
+
+@PostMapping("/validate-token")
+    public ResponseEntity<String> validateToken(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            return authService.validateToken(token);
+        } else {
+            return ResponseEntity.status(400).body("Invalid Authorization header");
+        }
+    }
+
+
+
 }
