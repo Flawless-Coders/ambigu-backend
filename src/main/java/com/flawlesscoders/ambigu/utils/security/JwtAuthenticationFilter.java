@@ -9,6 +9,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.flawlesscoders.ambigu.modules.auth.BlacklistToken.BlacklistTokenRepository;
+
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsServiceImpl userDetailsService;
+    private final BlacklistTokenRepository blacklistTokenRepository;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
@@ -28,6 +31,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String authHeader = request.getHeader("Authorization");
             if(authHeader != null && authHeader.startsWith("Bearer ")){
                 String token = authHeader.replace("Bearer ", "");
+
+                if(blacklistTokenRepository.existsByToken(token)){
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token invalido, por favor inicie sesión nuevamente");
+                    return;
+                }
+
                 if(jwtTokenProvider.validateToken(token)){
                     Claims claims = jwtTokenProvider.getClaimsFromToken(token);
                     String username = claims.getSubject();

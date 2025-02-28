@@ -1,5 +1,6 @@
 package com.flawlesscoders.ambigu.modules.auth;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -49,4 +50,14 @@ public class AuthService {
 
         return jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name(), isLeader);
     }
+
+    public ResponseEntity<String> validateToken( String token) {
+        if(jwtTokenProvider.validateToken(token)){
+            return ResponseEntity.ok("Token valido");
+        } else {
+            return ResponseEntity.status(401).body("Token invalido");
+        }
+    }
+
+
 }
