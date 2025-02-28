@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 @RestController
-@RequestMapping("/order")
+@RequestMapping("api/order")
 @AllArgsConstructor
 public class OrderController {
     private final OrderService service;

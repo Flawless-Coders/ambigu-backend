@@ -205,5 +205,15 @@ public class MenuService {
     menuRepository.save(menu);
     return true;
  }
+
+    /**
+     * Gets the menus based on their status (active/inactive).
+     * @param status The status of the menu.
+     * @return A list of menus with the specified status.
+     */
+
+     public List<Menu> getByStatus(boolean status){
+        return menuRepository.findByStatus(status);
+     }
         
 }

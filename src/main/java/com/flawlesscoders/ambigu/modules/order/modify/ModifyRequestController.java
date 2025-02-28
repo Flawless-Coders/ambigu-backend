@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping("/modify")
+@RequestMapping("api/modify")
 @AllArgsConstructor
 public class ModifyRequestController {
     private final ModifyRequestService service;
@@ -26,6 +26,16 @@ public class ModifyRequestController {
     @GetMapping
     public ResponseEntity<List<ModifyRequest>> getAllRequests(){
         return ResponseEntity.ok(service.getAllRequests());
+    }
+
+    @GetMapping("/pendingRequests")
+    public ResponseEntity<List<ModifyRequest>> getPendingRequests(){
+        return ResponseEntity.ok(service.getPendingRequests());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ModifyRequest> getById(@PathVariable String id){
+        return ResponseEntity.ok(service.getById(id));
     }
 
     @Operation(summary = "Request order modification", description = "Submits a request to modify an existing order")

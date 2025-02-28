@@ -7,8 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.flawlesscoders.ambigu.modules.dish.Dish;
+import com.flawlesscoders.ambigu.modules.dish.DishRepository;
 import com.flawlesscoders.ambigu.modules.order.Order;
 import com.flawlesscoders.ambigu.modules.order.OrderRepository;
+import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
+import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
 
 import lombok.AllArgsConstructor;
 
@@ -26,6 +30,14 @@ public class ModifyRequestService {
         return requestRepository.findAll();
     }   
 
+    public List<ModifyRequest> getPendingRequests(){
+        return requestRepository.findByDeletedRequest(false);
+    }  
+
+    public ModifyRequest getById(String id){
+        return requestRepository.findById(id)
+        .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
     /**
      * Searches for a modify request by its ID.
      * @param id Modify request ID.
@@ -41,11 +53,9 @@ public class ModifyRequestService {
                 }
 
                 DecimalFormat df = new DecimalFormat("#.##");
-                float totalFormatted = Float.parseFloat(df.format(total));
-
+                float totalFormatted = Float.parseFloat(df.format(total));                
                 modifyRequest.setTotal(totalFormatted);
                 modifyRequest.setToDelete(false);
-
                 requestRepository.save(modifyRequest);
                 return modifyRequest;
             } else {
@@ -73,6 +83,8 @@ public class ModifyRequestService {
                     .modifiedDishes(found.getDishes())
                     .total(found.getTotal())
                     .waiter(found.getWaiter())
+                    .table((found.getTable()))
+                    .orderNumber((found.getOrderNumber()))
                     .deletedRequest(false)
                     .build();
                 requestRepository.save(deleteRequest);
