@@ -3,7 +3,6 @@ package com.flawlesscoders.ambigu.modules.user.waiter;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("api/waiters")
@@ -86,13 +86,11 @@ public class WaiterController {
         @ApiResponse(responseCode = "201", description = "Waiter created"),
         @ApiResponse(responseCode = "400", description = "Invalid waiter"),
     })
-    @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<Waiter> createWaiter(
-        @RequestPart("waiter") @Validated Waiter waiter,
-        @RequestPart("avatar") MultipartFile avatar) {
-
-        return waiterService.createWaiter(waiter, avatar);     
+    @PostMapping
+    public ResponseEntity<Waiter> createWaiter(@RequestBody @Valid Waiter waiter) {
+        return waiterService.createWaiter(waiter);
     }
+
 
     //UPDATE A WAITER
     @Operation(summary = "Updates a waiter")

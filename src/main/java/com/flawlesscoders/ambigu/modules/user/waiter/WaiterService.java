@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class WaiterService {
 
     private final WaiterRepository waiterRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private GetWaiterDTO toGetWaiterDTO(Waiter waiter) {
         return GetWaiterDTO.builder()
@@ -83,17 +85,10 @@ public class WaiterService {
         return ResponseEntity.ok(toGetWaiterWAvatarDTO(waiter));
     }
 
-    public ResponseEntity<Waiter> createWaiter(@Validated @RequestPart("waiter") Waiter waiter, @RequestPart("avatar") MultipartFile avatar) {
-        try {
-            if (!avatar.isEmpty()) {
-                String base64Image = Base64.getEncoder().encodeToString(avatar.getBytes());
-                waiter.setAvatarBase64(base64Image);
-            }
-            Waiter savedWaiter = waiterRepository.save(waiter);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedWaiter);
-        }catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al guardar la imagen");
-        }
+    public ResponseEntity<Waiter> createWaiter(@Valid Waiter waiter) {
+        waiter.setPassword(passwordEncoder.encode(waiter.getPassword()));
+        Waiter savedWaiter = waiterRepository.save(waiter);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedWaiter);
     }
 
     public ResponseEntity<Void> updateWaiter(@Valid Waiter waiter) {
