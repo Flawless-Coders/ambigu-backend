@@ -1,0 +1,104 @@
+package com.flawlesscoders.ambigu.modules.dish;
+
+import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.flawlesscoders.ambigu.modules.menu.Menu;
+import com.flawlesscoders.ambigu.modules.menu.MenuRepository;
+
+import java.util.List;
+
+@Service
+@AllArgsConstructor
+public class DishService {
+
+    private final DishRepository dishRepository;
+    private final MenuRepository menuRepository;
+
+    /**
+     * Retrieves all dishes.
+     * @return A list of all dishes.
+     */
+    public List<Dish> getAllDishes() {
+        return dishRepository.findAll();
+    }
+
+    /**
+     * Searches for a dish by its ID.
+     * @param id Dish ID.
+     * @return The found dish.
+     * @throws ResponseStatusException if the dish is not found.
+     */
+    public Dish getDishById(String id) {
+        return dishRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Dish not found."));
+    }
+
+    /**
+     * Saves a new dish in the database.
+     * @param dish The dish to save.
+     * @return The saved dish.
+     * @throws ResponseStatusException if the data is invalid.
+     */
+    public Dish saveDish(Dish dish) {
+        if (dish.getName() == null || dish.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The dish name cannot be empty.");
+        }
+        if (dish.getDescription() == null || dish.getDescription().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The dish description cannot be empty.");
+        }
+        dish.setStatus(true); // The dish is always created as active
+        return dishRepository.save(dish);
+    }
+
+    /**
+     * Updates an existing dish.
+     * @param id The ID of the dish.
+     * @param updatedDish The dish object with updated data.
+     * @return The updated dish.
+     * @throws ResponseStatusException if the dish is not found.
+     */
+    public Dish updateDish(String id, Dish updatedDish) {
+        Dish existingDish = getDishById(id);
+
+        existingDish.setName(updatedDish.getName());
+        existingDish.setDescription(updatedDish.getDescription());
+        existingDish.setImage(updatedDish.getImage());
+        existingDish.setCategory(updatedDish.getCategory());
+
+        return dishRepository.save(existingDish);
+    }
+
+    /**
+     * Disables a dish instead of deleting it.
+     * @param id The ID of the dish.
+     * @throws ResponseStatusException if the dish is linked to an active menu.
+     */
+    public void disableDish(String id) {
+        Dish dish = getDishById(id);
+
+        // Check if the dish is in any menu
+        List<Menu> menus = menuRepository.findAll();
+        for (Menu menu : menus) {
+            if (menu.getDishes().contains(id)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "The dish cannot be disabled because it is assigned to a menu.");
+            }
+        }
+
+        dish.setStatus(false);
+        dishRepository.save(dish);
+    }
+
+    /**
+     * Toggles the status of a dish between active and inactive.
+     * @param id The ID of the dish.
+     */
+    public void toggleStatus(String id) {
+        Dish dish = getDishById(id);
+        dish.setStatus(!dish.isStatus());
+        dishRepository.save(dish);
+    }
+}
