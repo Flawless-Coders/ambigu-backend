@@ -1,5 +1,7 @@
 package com.flawlesscoders.ambigu.modules.workplan;
 
+import java.util.ArrayList;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,5 +11,5 @@ import lombok.NoArgsConstructor;
 @Data
 public class Assigment {
     private String table;
-    private String waiter;
+    private ArrayList<String> waiters;
 }
