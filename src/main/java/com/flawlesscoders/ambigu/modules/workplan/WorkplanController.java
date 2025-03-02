@@ -145,8 +145,8 @@ public class WorkplanController {
         @ApiResponse(responseCode = "404", description = "Mesa no encontrada"),
         @ApiResponse(responseCode = "500", description = "Error en el servidor")
     })
-    @PutMapping("/{workplanId}/changeWaiter/{tableId}")
-    public ResponseEntity<String> changeWaiterToTable(@PathVariable String workplanId, @PathVariable String tableId, @RequestParam String waiterId) {
+    @PutMapping("/{workplanId}/changeWaiter/{tableId}/{waiterId}")
+    public ResponseEntity<String> changeWaiterToTable(@PathVariable String workplanId, @PathVariable String tableId, @PathVariable String waiterId) {
         return ResponseEntity.ok(workplanService.changeWaiterToTable(workplanId, tableId, waiterId));
     }
 
