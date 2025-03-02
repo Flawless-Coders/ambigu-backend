@@ -45,11 +45,11 @@ public class WorkplanController {
         @ApiResponse(responseCode = "400", description = "Datos inválidos"),
         @ApiResponse(responseCode = "500", description = "Error en el servidor")
     })
-    @PutMapping("/{workplanId}/assignments")
+    @PutMapping("/{workplanId}/assignments/{tableId}/{waiterId}")
     public ResponseEntity<Workplan> addAssignment(
             @PathVariable String workplanId,
-            @RequestParam String tableId,
-            @RequestParam String waiterId) {
+            @PathVariable String tableId,
+            @PathVariable String waiterId) {
         Workplan updatedWorkplan = workplanService.addAssignmentToWorkplan(workplanId, tableId, waiterId);
         return ResponseEntity.ok(updatedWorkplan);
     }
