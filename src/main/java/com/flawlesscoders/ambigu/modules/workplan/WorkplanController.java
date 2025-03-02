@@ -222,4 +222,40 @@ public class WorkplanController {
     public ResponseEntity<Boolean> restartWorkplan(@PathVariable String workplanId){
         return ResponseEntity.ok(workplanService.restartWorkplan(workplanId));
     }
+
+    @Operation(summary = "Contador de mesas de un mesero en un workplan", description = "Contador de mesas de un mesero en un workplan activo")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Contador de mesas obtenido correctamente"),
+        @ApiResponse(responseCode = "400", description = "Error al obtener el contador de mesas"),
+        @ApiResponse(responseCode = "404", description = "No hay mesas asignadas a este mesero"),
+        @ApiResponse(responseCode = "500", description = "Error en el servidor")
+    })
+    @GetMapping("/{workplanId}/getCountTablesByWaiterInWorkplan/{waiterId}")
+    public ResponseEntity<Integer> getCountTablesByWaiterInWorkplan(@PathVariable String workplanId, @PathVariable String waiterId){
+        return ResponseEntity.ok(workplanService. countTablesByWaiterInWorkplan(workplanId, waiterId));
+    }
+   
+    @Operation(summary = "Obtener el id del workplan en curso", description = "Obtener el id del workplan en curso")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Id del plan de trabajo obtenido correctamente"),
+        @ApiResponse(responseCode = "400", description = "Error al obtener el id del plan de trabajo"),
+        @ApiResponse(responseCode = "404", description = "No hay plan de trabajo activo"),
+        @ApiResponse(responseCode = "500", description = "Error en el servidor")
+    })
+    @GetMapping("/currentWorkplan")
+    public ResponseEntity<String> getIdWorkplanPresent(){
+        return ResponseEntity.ok(workplanService.getIdWorkplanPresent());
+    }
+
+    @Operation(summary = "Obtener mesas de un mesero", description = "Obtener las mesas de un mesero en un plan de trabajo activo")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de mesas obtenida correctamente"),
+        @ApiResponse(responseCode = "400", description = "Error al obtener la lista de mesas"),
+        @ApiResponse(responseCode = "404", description = "No hay mesas asignadas a este mesero"),
+        @ApiResponse(responseCode = "500", description = "Error en el servidor")
+    })
+    @GetMapping("/getTablesInChargeByWaiterInWorkplan/{waiterId}")
+    public ResponseEntity<List<Table>> getTablesInChargeByWaiterInWorkplan(@PathVariable String waiterId){
+        return ResponseEntity.ok(workplanService.getTablesInChargeByWaiterInWorkplan(waiterId));
+    }
 }

@@ -493,4 +493,71 @@ public class WorkplanService {
         }
     }
     
+    //method to count the number of tables that one waiter has in a workplan
+    public int countTablesByWaiterInWorkplan(String workplanId, String waiterId) {
+        try {
+            Workplan workplan = workplanRepository.findById(workplanId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
+    
+            // Contar solo las mesas donde el `waiterId` es el último mesero en la lista de waiters y `tableWaiter == true`
+            long count = workplan.getAssigment().stream()
+                    .filter(assignment -> {
+                        List<String> waiters = assignment.getWaiters();
+                        Table table = tableRepository.findById(assignment.getTable())
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
+    
+                        return table.isTableWaiter() //que aún tenga mesero asignado
+                                && !waiters.isEmpty()
+                                && waiters.get(waiters.size() - 1).equals(waiterId); // solo si es el último
+                    })
+                    .count();
+    
+            return (int) count;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al contar las mesas asignadas al último mesero en el plan de trabajo");
+        }
+    }
+
+    //method to get id of a workplan in curse
+    public String getIdWorkplanPresent() {
+        try {
+            Workplan workplan = workplanRepository.findByIsPresent(true)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay plan de trabajo activo"));
+    
+            return workplan.getId();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener el ID del plan de trabajo activo");
+        }
+    }
+    
+    public List<Table> getTablesInChargeByWaiterInWorkplan(String waiterId) {
+        try {
+            // Buscar el Workplan activo
+            Workplan workplan = workplanRepository.findByIsPresent(true)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un plan de trabajo activo"));
+    
+            // Filtrar las mesas donde el `waiterId` es el último mesero en la lista de waiters
+            List<Table> tables = workplan.getAssigment().stream()
+                    .filter(assignment -> {
+                        List<String> waiters = assignment.getWaiters();
+                        Table table = tableRepository.findById(assignment.getTable())
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
+    
+                        return table.isTableWaiter() // Que aún tenga mesero asignado
+                                && !waiters.isEmpty()
+                                && waiters.get(waiters.size() - 1).equals(waiterId); // Solo si es el último mesero asignado
+                    })
+                    .map(assignment -> tableRepository.findById(assignment.getTable())
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada")))
+                    .collect(Collectors.toList());
+    
+            return tables;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas asignadas al mesero en el plan de trabajo");
+        }
+    }
+    
 }
