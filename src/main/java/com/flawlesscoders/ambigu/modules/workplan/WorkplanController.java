@@ -194,9 +194,9 @@ public class WorkplanController {
         @ApiResponse(responseCode = "404", description = "Mesa no encontrada"),
         @ApiResponse(responseCode = "500", description = "Error en el servidor")
     })
-    @PutMapping("/{workplanId}/disableTable/{tableId}")
-    public ResponseEntity<String> changeStatusTableInAWorkplan(@PathVariable String workplanId, @PathVariable String tableId) {
-        return ResponseEntity.ok(workplanService.changeStatusTableInAWorkplan(workplanId, tableId));
+    @PutMapping("/disableTable/{tableId}")
+    public ResponseEntity<String> changeStatusTableInAWorkplan(@PathVariable String tableId) {
+        return ResponseEntity.ok(workplanService.changeStatusTableInAWorkplan(tableId));
     }
 
     @Operation(summary = "Obtener las mesas deshabilitadas solo del workplan", description = "Obtener las mesas deshabilitadas solo del workplan activo")

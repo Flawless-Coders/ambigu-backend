@@ -18,4 +18,6 @@ public interface TableRepository extends MongoRepository<Table, String>{
 
     @Query("{ 'isEnabled': false, 'tableWaiter': false }")
     List<Table> findDisabledTablesWithoutWaiter();
+
+    List<Table> findByDisabledInWorkplanTrue();
 }
