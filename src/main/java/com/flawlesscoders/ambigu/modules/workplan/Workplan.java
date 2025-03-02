@@ -23,7 +23,7 @@ public class Workplan {
     private Date date;
     private String name;
 
-    private List<Assigment> assigment;
+    private List<Assignment> assigment;
 
     @Schema(description = "Indicates if there is any work plan in progress",  defaultValue = "false")
     private boolean isPresent;

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Assigment {
+public class Assignment {
     private String table;
     private ArrayList<String> waiters;
 }
