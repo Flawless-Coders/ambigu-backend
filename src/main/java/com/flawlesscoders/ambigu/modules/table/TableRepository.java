@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
+import com.flawlesscoders.ambigu.modules.table.DTO.TableEnabledWithoutWaiter;
+
 public interface TableRepository extends MongoRepository<Table, String>{
     List<Table> findByIsEnabledTrue();
 
