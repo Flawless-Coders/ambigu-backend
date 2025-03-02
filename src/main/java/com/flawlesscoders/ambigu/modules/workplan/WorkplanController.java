@@ -247,15 +247,15 @@ public class WorkplanController {
         return ResponseEntity.ok(workplanService.getIdWorkplanPresent());
     }
 
-    @Operation(summary = "Obtener mesas de un mesero", description = "Obtener las mesas de un mesero en un plan de trabajo activo")
+    @Operation(summary = "Obtener mesas de un mesero por su email", description = "Obtener las mesas de un mesero por su email en un plan de trabajo activo")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista de mesas obtenida correctamente"),
         @ApiResponse(responseCode = "400", description = "Error al obtener la lista de mesas"),
         @ApiResponse(responseCode = "404", description = "No hay mesas asignadas a este mesero"),
         @ApiResponse(responseCode = "500", description = "Error en el servidor")
     })
-    @GetMapping("/getTablesInChargeByWaiterInWorkplan/{waiterId}")
-    public ResponseEntity<List<Table>> getTablesInChargeByWaiterInWorkplan(@PathVariable String waiterId){
-        return ResponseEntity.ok(workplanService.getTablesInChargeByWaiterInWorkplan(waiterId));
+    @GetMapping("/getTablesInChargeByWaiterInWorkplan/{waiterEmail}")
+    public ResponseEntity<List<Table>> getTablesInChargeByWaiterInWorkplan(@PathVariable String waiterEmail){
+        return ResponseEntity.ok(workplanService.getTablesInChargeByWaiterInWorkplan(waiterEmail));
     }
 }

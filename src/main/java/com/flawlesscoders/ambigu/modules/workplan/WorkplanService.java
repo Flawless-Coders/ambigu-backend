@@ -532,8 +532,14 @@ public class WorkplanService {
         }
     }
     
-    public List<Table> getTablesInChargeByWaiterInWorkplan(String waiterId) {
+    public List<Table> getTablesInChargeByWaiterInWorkplan(String waiterEmail) {
         try {
+            // Buscar al mesero por email
+            Waiter waiter = waiterRepository.findByEmail(waiterEmail)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+    
+            String waiterId = waiter.getId(); // Obtenemos el ID del mesero
+    
             // Buscar el Workplan activo
             Workplan workplan = workplanRepository.findByIsPresent(true)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un plan de trabajo activo"));
@@ -547,7 +553,7 @@ public class WorkplanService {
     
                         return table.isTableWaiter() // Que aún tenga mesero asignado
                                 && !waiters.isEmpty()
-                                && waiters.get(waiters.size() - 1).equals(waiterId); // Solo si es el último mesero asignado
+                                && waiters.get(waiters.size() - 1).equals(waiterId); // ✅ Solo si es el último mesero asignado
                     })
                     .map(assignment -> tableRepository.findById(assignment.getTable())
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada")))
@@ -559,5 +565,6 @@ public class WorkplanService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas asignadas al mesero en el plan de trabajo");
         }
     }
+    
     
 }
