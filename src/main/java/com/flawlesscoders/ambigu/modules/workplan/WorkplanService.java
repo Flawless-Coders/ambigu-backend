@@ -202,7 +202,7 @@ public class WorkplanService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
 
                         // Crear y devolver el DTO
-                        return new TableWithWaiterDTO(table.getId(), table.getTableIdentifier(), waiter.getName(), table.isTableWaiter(),workplan.getId());
+                        return new TableWithWaiterDTO(table.getId(), table.getTableIdentifier(), waiter.getName(), waiter.getLastname_p(), table.isTableWaiter(),workplan.getId());
                     }
                     return null; // No tiene asignación en el Workplan
                 })
@@ -244,6 +244,7 @@ public class WorkplanService {
     
                 // Marcar la mesa como disponible
                 foundTable.setTableWaiter(false);
+                foundTable.setDisabledInWorkplan(false);
                 tableRepository.save(foundTable); // Guardar el cambio en la mesa
             }
     
@@ -387,62 +388,59 @@ public class WorkplanService {
     }
 
     //method to change status to a table in a worikplan active
-    public String changeStatusTableInAWorkplan(String workplanId, String tableId) {
+    public String changeStatusTableInAWorkplan(String tableId) {
         try {
-            Workplan workplan = workplanRepository.findById(workplanId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
+            // Verificar si hay un Workplan activo
+            boolean workplanExists = workplanRepository.findByIsPresent(true).isPresent();
     
-            if (!workplan.isPresent()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay un plan de trabajo activo");
+            if (!workplanExists) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay un Workplan activo");
             }
     
             Table table = tableRepository.findById(tableId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
     
-            if(table.isEnabled() && (!table.isTableWaiter())){
-                table.setEnabled(false);
-            }else if((!table.isTableWaiter()) && (!table.isEnabled())){
-                table.setEnabled(true);
-            }else{
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mesa tiene un mesero asignado");
+            // No se puede deshabilitar si tiene mesero asignado
+            if (table.isTableWaiter()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mesa tiene un mesero asignado, no se puede deshabilitar.");
             }
     
-            // Buscar la asignación que corresponde a la mesa especificada
-            Assignment assignment = workplan.getAssigment().stream()
-                    .filter(a -> a.getTable().equals(tableId))
-                    .findFirst()
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada en este plan de trabajo"));
+            // Cambiar el estado de la mesa
+            boolean newStatus = !table.isEnabled();
+            table.setEnabled(newStatus);
+            table.setDisabledInWorkplan(!newStatus);
     
-          
+            // Guardar los cambios
             tableRepository.save(table);
-            workplanRepository.save(workplan);
     
-            return "Se cambió el estado de la mesa del workplan exitosamente";
+            return "Estado de la mesa cambiado exitosamente";
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al cambiar el estado de la mesa en el plan de trabajo");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al cambiar el estado de la mesa en el Workplan");
         }
     }
     
     //method to get all disabled tables in a workplan
-    public List<Table> getDisabledTablesInAWorkplan(String workplanId) {
+    public List<Table> getDisabledTablesInAWorkplan() {
         try {
-            Workplan workplan = workplanRepository.findById(workplanId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
+            // Verificar si el Workplan existe
+            Workplan workplan = workplanRepository.findByIsPresent(true)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay plan de trabajo activo"));
     
-            List<Table> disabledTables = tableRepository.findDisabledTablesWithoutWaiter();
+            // Obtener mesas deshabilitadas por el líder en este Workplan
+            List<Table> disabledTables = tableRepository.findByDisabledInWorkplanTrue();
     
             if (disabledTables.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay mesas deshabilitadas");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay mesas deshabilitadas en este Workplan");
             }
     
             return disabledTables;
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas deshabilitadas");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas deshabilitadas en el Workplan");
         }
     }
-
+    
     //method to restart a workplan existing
     public boolean restartWorkplan(String workplanId) {
         try {
