@@ -72,24 +72,23 @@ public class MenuController {
                 .body((Resource) gridFsResource); 
     }
 
-    @Operation(summary = "Get dishes by menu, category and the status of the menu", description = "Returns a list of dishes belonging to a specific menu and category based on their menu status (enabled/disabled)")
+    @Operation(summary = "Get dishes by menu and category of a disable menu", description = "Returns a list of dishes belonging to a specific menu and category based on their menu status (enabled/disabled)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Dish list retrieved successfully"),
         @ApiResponse(responseCode = "404", description = "Menu or category not found")
     })
-        @GetMapping("/getDishes/{menuId}/{categoryId}/{status}")
-        public ResponseEntity<List<Dish>> getDishesByMenu(@PathVariable String menuId, @PathVariable String categoryId, @PathVariable boolean status){
-        return ResponseEntity.ok(menuService.getDishesByMenu(menuId, categoryId, status));
+        @GetMapping("/getDishes/{menuId}/{categoryId}")
+        public ResponseEntity<List<Dish>> getDishesByMenu(@PathVariable String menuId, @PathVariable String categoryId){
+        return ResponseEntity.ok(menuService.getDishesByMenu(menuId, categoryId));
         }
     
-        @Operation(summary = "Get categories by menu", description = "Returns a list of categories belonging to a specific menu")
+        @Operation(summary = "Get categories of the current menu.", description = "Returns a list of categories belonging to the current menu")
         @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Category list retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Menu not found")
+            @ApiResponse(responseCode = "200", description = "Category list retrieved successfully")
         })
-        @GetMapping("/category/{menuId}")
-        public ResponseEntity<List<Category>> getCategoriesByMenu(@PathVariable String menuId){
-            return ResponseEntity.ok(menuService.getCategoriesByMenu(menuId));
+        @GetMapping("/category")
+        public ResponseEntity<List<Category>> getCategoriesByMenu(){
+            return ResponseEntity.ok(menuService.getCategoriesByMenu());
         }
 
 
@@ -202,4 +201,25 @@ public class MenuController {
             return ResponseEntity.ok(menus);
         }
 
+
+        
+        @Operation(summary = "Get dishes by category of the current menu.", description = "Returns a list of dishes belonging to a category of the current menu")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Dish list retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Category not found")
+        })
+        @GetMapping("/getDishesByCategory/{categoryId}")
+        public ResponseEntity<List<Dish>> getDishesByCategory(@PathVariable String categoryId){
+        return ResponseEntity.ok(menuService.getDishesByCategory(categoryId));
+        }
+
+        @Operation(summary = "Get categories from a disable menu.", description = "Returns a list of categories belonging to a specific menu")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category list retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Menu not found")
+        })
+        @GetMapping("/getCategoriesByDisableMenu/{menuId}")
+        public ResponseEntity<List<Category>> getCategoriesByDisableMenu(@PathVariable String menuId){
+        return ResponseEntity.ok(menuService.getCategoriesByDisableMenu(menuId));
+        }
     }

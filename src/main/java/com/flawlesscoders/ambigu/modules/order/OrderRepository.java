@@ -8,11 +8,11 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OrderRepository extends MongoRepository<Order, String>{
-    @Query("{ 'finalized': false }")
-    List<Order> getCurrentOrders();
+    @Query("{ 'finalized': false, 'waiter': ?0 }")
+    List<Order> getCurrentOrders(String waiterName);
 
-    @Query("{ 'finalized': true }")
-    List<Order> getFinalizedOrders();
+    @Query("{ 'finalized': true, 'waiter':?0  }")
+    List<Order> getFinalizedOrders(String waiterName);
 
     @Query("{'table': ?tableId}")
     List<Order> getOrdersByTable(String tableId);

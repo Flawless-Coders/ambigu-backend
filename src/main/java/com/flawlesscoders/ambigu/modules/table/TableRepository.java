@@ -16,4 +16,6 @@ public interface TableRepository extends MongoRepository<Table, String>{
     @Query("{ 'isEnabled': true, 'tableWaiter': true }")
     List<Table> findEnabledTablesWithWaiter();
 
+    Table findByTableIdentifier(String tableIdentifier);
+
 }

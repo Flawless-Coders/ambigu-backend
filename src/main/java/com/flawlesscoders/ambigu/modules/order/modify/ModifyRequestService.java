@@ -92,5 +92,13 @@ public class ModifyRequestService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
     }
+
+    public boolean rejectModifyRequest(String id){
+        ModifyRequest request = requestRepository.findById(id)
+        .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        request.setDeletedRequest(true);
+        requestRepository.save(request);
+        return true;
+    }
 }
 
