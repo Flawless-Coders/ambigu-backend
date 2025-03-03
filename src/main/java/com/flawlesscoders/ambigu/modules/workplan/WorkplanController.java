@@ -206,9 +206,9 @@ public class WorkplanController {
         @ApiResponse(responseCode = "404", description = "No hay mesas deshabilitadas en un plan activo"),
         @ApiResponse(responseCode = "500", description = "Error en el servidor")
     })
-    @GetMapping("/getDisabledTables/{workplanId}")
-    public ResponseEntity<List<Table>> getDisabledTables(@PathVariable String workplanId){
-        return ResponseEntity.ok(workplanService.getDisabledTablesInAWorkplan(workplanId));
+    @GetMapping("/getDisabledTablesInAWorkplan")
+    public ResponseEntity<List<Table>> getDisabledTables(){
+        return ResponseEntity.ok(workplanService.getDisabledTablesInAWorkplan());
     }
 
     @Operation(summary = "Reutilizar un plan de trabajo en existencia", description = "Reutilizar un plan de trabajo en existencia")

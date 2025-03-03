@@ -397,7 +397,6 @@ public class WorkplanService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay un Workplan activo");
             }
     
-            // Buscar la mesa
             Table table = tableRepository.findById(tableId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
     
@@ -409,8 +408,6 @@ public class WorkplanService {
             // Cambiar el estado de la mesa
             boolean newStatus = !table.isEnabled();
             table.setEnabled(newStatus);
-    
-            // ✅ Si hay un Workplan activo, marcar que fue deshabilitada en un Workplan
             table.setDisabledInWorkplan(!newStatus);
     
             // Guardar los cambios
@@ -424,11 +421,11 @@ public class WorkplanService {
     }
     
     //method to get all disabled tables in a workplan
-    public List<Table> getDisabledTablesInAWorkplan(String workplanId) {
+    public List<Table> getDisabledTablesInAWorkplan() {
         try {
             // Verificar si el Workplan existe
-            workplanRepository.findById(workplanId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
+            Workplan workplan = workplanRepository.findByIsPresent(true)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay plan de trabajo activo"));
     
             // Obtener mesas deshabilitadas por el líder en este Workplan
             List<Table> disabledTables = tableRepository.findByDisabledInWorkplanTrue();
