@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
-
 public interface TableRepository extends MongoRepository<Table, String>{
     List<Table> findByIsEnabledTrue();
 
@@ -19,4 +18,6 @@ public interface TableRepository extends MongoRepository<Table, String>{
 
     @Query("{ 'isEnabled': false, 'tableWaiter': false }")
     List<Table> findDisabledTablesWithoutWaiter();
+
+    List<Table> findByDisabledInWorkplanTrue();
 }
