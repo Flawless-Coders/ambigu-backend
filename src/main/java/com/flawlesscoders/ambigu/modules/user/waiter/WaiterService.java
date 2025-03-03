@@ -132,4 +132,8 @@ public class WaiterService {
         return ResponseEntity.ok().build();
     }
     
+    public ResponseEntity<List<GetWaiterWAvatarDTO>> getWaitersWAvatar() {
+        List<Waiter> waiters = waiterRepository.findAllByStatusTrueAndLeaderFalse();
+        return ResponseEntity.ok(waiters.stream().map(this::toGetWaiterWAvatarDTO).toList());
+    }
 }

@@ -202,7 +202,7 @@ public class WorkplanService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
 
                         // Crear y devolver el DTO
-                        return new TableWithWaiterDTO(table.getId(), table.getTableIdentifier(), waiter.getName(), table.isTableWaiter(),workplan.getId());
+                        return new TableWithWaiterDTO(table.getId(), table.getTableIdentifier(), waiter.getName(), waiter.getLastname_p(), table.isTableWaiter(),workplan.getId());
                     }
                     return null; // No tiene asignación en el Workplan
                 })
