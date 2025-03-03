@@ -9,5 +9,4 @@ public class AmbiguApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(AmbiguApplication.class, args);
 	}
-
 }
