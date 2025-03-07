@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AdminService {
-    private AdminRepository adminRepository;
+    private final AdminRepository adminRepository;
 
     private GetAdminDTO transformAdminToDTO (Admin admin) {
         return GetAdminDTO.builder()
@@ -23,11 +23,12 @@ public class AdminService {
             .lastname_p(admin.getLastname_p())
             .lastname_m(admin.getLastname_m())
             .email(admin.getEmail())
+            .avatarBase64(admin.getAvatarBase64())
             .build();
     }
 
-    public ResponseEntity<GetAdminDTO> getAdminById(String id) {
-        Admin admin = adminRepository.findAdminById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
+    public ResponseEntity<GetAdminDTO> getAdminByEmail(String email) {
+        Admin admin = adminRepository.findAdminByEmail(email).orElseThrow(() -> new RuntimeException("Admin not found"));
         return ResponseEntity.ok(transformAdminToDTO(admin));
     }
 

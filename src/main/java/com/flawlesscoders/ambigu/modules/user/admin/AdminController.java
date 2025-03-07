@@ -32,10 +32,10 @@ public class AdminController {
         @ApiResponse(responseCode = "200", description = "Admin data obtained"),
         @ApiResponse(responseCode = "404", description = "Admin not found"),
     })
-    @GetMapping("/{id}")
+    @GetMapping("/{email}")
     public ResponseEntity<GetAdminDTO> getAdminData(
-        @Parameter(description = "Admin id") @PathVariable String id) {
-        return adminService.getAdminById(id);
+        @Parameter(description = "Admin email") @PathVariable String email) {
+        return adminService.getAdminByEmail(email);
     }
 
     //UPDATE ADMIN DATA
