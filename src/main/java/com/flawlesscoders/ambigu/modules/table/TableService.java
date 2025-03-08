@@ -25,6 +25,7 @@ public class TableService {
             table.setEnabled(true);
             table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
             table.setTableWaiter(false);
+            table.setDisabledInWorkplan(false);
             return tableRepository.save(table);
         }catch(Exception e){
             e.printStackTrace();
@@ -134,7 +135,7 @@ public class TableService {
         }
     }
 
-    //method to find all disabled tables in a work plan (mobile)...
+    //method to find all disabled tables in a work plan (mobile)... in workplanService
 
     //method to find all enabled tables with waiter (mobile)
     public List<Table> getEnabledTablesWithWaiter(){
