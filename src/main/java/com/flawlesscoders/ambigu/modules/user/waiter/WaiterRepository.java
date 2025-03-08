@@ -25,5 +25,10 @@ public interface WaiterRepository extends MongoRepository<Waiter, String> {
     @Query("{ '_class': 'com.flawlesscoders.ambigu.modules.user.waiter.Waiter', 'email': ?0 }")
     Optional<Waiter> findByEmail(String email);
 
-    
+    /**
+     * Obtains all active waiters who aren't leaders
+     * @return List of active waiters who aren't leaders
+     */
+    @Query("{ 'status': true, 'isLeader': false }")
+    List<Waiter> findAllByStatusTrueAndLeaderFalse();
 }

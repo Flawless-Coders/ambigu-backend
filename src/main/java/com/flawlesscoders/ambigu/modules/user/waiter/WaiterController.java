@@ -145,5 +145,14 @@ public class WaiterController {
         return waiterService.changeWaiterStatus(id);
     }
 
+    @Operation(summary = "Obtains all active waiters who aren't leaders")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Active waiters obtained"),
+        @ApiResponse(responseCode = "404", description = "No active waiters found"),
+    })
+    @GetMapping("/waitersWAvatar")
+    public ResponseEntity<List<GetWaiterWAvatarDTO>> getWaitersWAvatar(){
+        return waiterService.getWaitersWAvatar();
+    }
     
 }

@@ -3,6 +3,8 @@ package com.flawlesscoders.ambigu.modules.workplan;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.flawlesscoders.ambigu.modules.workplan.objects.Assignment;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
