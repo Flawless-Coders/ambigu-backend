@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.*;
 
 import com.flawlesscoders.ambigu.modules.table.Table;
 import com.flawlesscoders.ambigu.modules.table.DTO.TableWithWaiterDTO;
+import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterWAvatarDTO;
 import com.flawlesscoders.ambigu.modules.workplan.DTO.AssignmentDTO;
+import com.flawlesscoders.ambigu.modules.workplan.DTO.HoursWaiterDTO;
+import com.flawlesscoders.ambigu.modules.workplan.objects.WaiterWorkplan;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -45,11 +48,11 @@ public class WorkplanController {
         @ApiResponse(responseCode = "400", description = "Datos inválidos"),
         @ApiResponse(responseCode = "500", description = "Error en el servidor")
     })
-    @PutMapping("/{workplanId}/assignments/{tableId}/{waiterId}")
+    @PutMapping("/{workplanId}/assignments/{tableId}")
     public ResponseEntity<Workplan> addAssignment(
             @PathVariable String workplanId,
             @PathVariable String tableId,
-            @PathVariable String waiterId) {
+            @RequestBody WaiterWorkplan waiterId) {
         Workplan updatedWorkplan = workplanService.addAssignmentToWorkplan(workplanId, tableId, waiterId);
         return ResponseEntity.ok(updatedWorkplan);
     }
@@ -88,18 +91,6 @@ public class WorkplanController {
     @PutMapping("/finalize")
     public ResponseEntity<Boolean> killPresentWorkplan(){
         return ResponseEntity.ok(workplanService.killPresentWorkplan());
-    }
-
-    @Operation(summary = "Quitar mesero de una mesa sin cliente", description = "Quitar un mesero de una mesa y verifica que no tenga un cliente en curso")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Estado de la mesa actualizado, mesa sin mesero"),
-        @ApiResponse(responseCode = "400", description = "No se puede quitar el mesero de esta mesa porque esta ocupada por un cliente"),
-        @ApiResponse(responseCode = "404", description = "Mesa no encontrada"),
-        @ApiResponse(responseCode = "500", description = "Error en el servidor")
-    })
-    @PutMapping("{workplanId}/removeWaiter/{tableId}")
-    public ResponseEntity<String> removeWaiterToTable(@PathVariable String workplanId, @PathVariable String tableId) {
-        return ResponseEntity.ok(workplanService.removeWaiterToTable(workplanId, tableId));
     }
 
     @Operation(summary = "Seleccionar como favorito o quitar", description = "Agregar o quitar plan de trabajo a favoritos por su id de workplan")
@@ -199,17 +190,6 @@ public class WorkplanController {
         return ResponseEntity.ok(workplanService.changeStatusTableInAWorkplan(tableId));
     }
 
-    @Operation(summary = "Obtener las mesas deshabilitadas solo del workplan", description = "Obtener las mesas deshabilitadas solo del workplan activo")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista de mesas deshabilitadas en workplan obtenida correctamente"),
-        @ApiResponse(responseCode = "400", description = "Error al obtener la lista de mesas deshabilitadas"),
-        @ApiResponse(responseCode = "404", description = "No hay mesas deshabilitadas en un plan activo"),
-        @ApiResponse(responseCode = "500", description = "Error en el servidor")
-    })
-    @GetMapping("/getDisabledTablesInAWorkplan")
-    public ResponseEntity<List<Table>> getDisabledTables(){
-        return ResponseEntity.ok(workplanService.getDisabledTablesInAWorkplan());
-    }
 
     @Operation(summary = "Reutilizar un plan de trabajo en existencia", description = "Reutilizar un plan de trabajo en existencia")
     @ApiResponses(value = {
@@ -258,4 +238,39 @@ public class WorkplanController {
     public ResponseEntity<List<Table>> getTablesInChargeByWaiterInWorkplan(@PathVariable String waiterEmail){
         return ResponseEntity.ok(workplanService.getTablesInChargeByWaiterInWorkplan(waiterEmail));
     }
+
+    @Operation(summary = "Obtener meseros que no estan en una mesa", description = "Obtener meseros que no estan en una mesa")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de meseros obtenida correctamente"),
+        @ApiResponse(responseCode = "400", description = "Error al obtener la lista de meseros"),
+        @ApiResponse(responseCode = "404", description = "No hay meseros que no esten en esta mesa"),
+        @ApiResponse(responseCode = "500", description = "Error en el servidor")
+    })
+    @GetMapping("/getWaitersNotAssignedToTable/{tableId}")
+    public ResponseEntity<List<GetWaiterWAvatarDTO>> getWaitersNotAssignedToTable(@PathVariable String tableId){
+        return ResponseEntity.ok(workplanService.getWaitersNotAssignedToTable(tableId));
+    }
+
+    @Operation(summary = "Actualizar horarios de un mesero en una mesa", description = "Actualiza los horarios de un mesero en una mesa específica")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Horarios actualizados correctamente"),
+        @ApiResponse(responseCode = "400", description = "Error al actualizar los horarios (por ejemplo, solapamiento de horarios)"),
+        @ApiResponse(responseCode = "404", description = "Mesa, mesero o plan de trabajo no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error en el servidor")
+    })
+    @PutMapping("/{workplanId}/tables/{tableId}/waiters/{waiterId}/updateHours")
+    public ResponseEntity<WaiterWorkplan> updateWaiterWorkplanHours(
+        @PathVariable String workplanId,   // ID del plan de trabajo
+        @PathVariable String tableId,      // ID de la mesa
+        @PathVariable String waiterId,     // ID del mesero
+        @RequestBody HoursWaiterDTO request) { // Cuerpo con las nuevas horas
+        return ResponseEntity.ok(workplanService.updateWaiterWorkplanHours(
+            workplanId,
+            tableId,
+            waiterId,
+            request.getHoraInicio(),
+            request.getHoraFin()
+        ));
+    }
+        
 }
