@@ -25,7 +25,6 @@ public class TableService {
             table.setEnabled(true);
             table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
             table.setTableWaiter(false);
-            table.setDisabledInWorkplan(false);
             return tableRepository.save(table);
         }catch(Exception e){
             e.printStackTrace();

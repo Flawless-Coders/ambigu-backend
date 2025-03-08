@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.modules.workplan;
+package com.flawlesscoders.ambigu.modules.workplan.objects;
 
 import java.util.ArrayList;
 
@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @Data
 public class Assignment {
     private String table;
-    private ArrayList<String> waiters;
+    private ArrayList<WaiterWorkplan> waiterWorkplan;
 }
