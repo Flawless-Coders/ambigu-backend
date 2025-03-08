@@ -1,6 +1,7 @@
 package com.flawlesscoders.ambigu.modules.order;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -8,6 +9,8 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.order.dto.OrderFeedbackDTO;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequest;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequestRepository;
@@ -224,4 +227,19 @@ public class OrderService {
         System.out.println(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
         return repository.getFinalizedOrders(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
     }
+
+    public Order addDishes(List<OrderDishes> dishes, String orderId){
+        Order order = repository.findById(orderId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if(order.getDishes().isEmpty()){
+            order.setDishes(new ArrayList<>());
+        }
+
+        for (OrderDishes orderDishes : dishes) {
+            order.getDishes().add(orderDishes);
+        }
+
+        return repository.save(order);
+    }
 }
+
+

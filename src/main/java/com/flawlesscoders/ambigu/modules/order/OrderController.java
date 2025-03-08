@@ -90,4 +90,9 @@ public class OrderController {
     public ResponseEntity<List<Order>> getFinalizedOrders(@PathVariable String waiterEmail){
         return ResponseEntity.ok(service.getFinalizedOrders(waiterEmail));
     }
+
+    @PutMapping("/addDishes/{orderId}")
+    public ResponseEntity<Order> addDishes(@PathVariable String orderId, @RequestBody List<OrderDishes> dishes){
+        return ResponseEntity.ok(service.addDishes(dishes, orderId));
+    }
 }

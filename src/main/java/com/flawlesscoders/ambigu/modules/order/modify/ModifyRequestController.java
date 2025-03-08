@@ -44,7 +44,7 @@ public class ModifyRequestController {
         @ApiResponse(responseCode = "200", description = "Modification request submitted successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid request data")
     })
-    @PostMapping("/upadateOrderRequest")
+    @PostMapping("/updateOrderRequest")
     public ResponseEntity<ModifyRequest> modifyRequest(@RequestBody ModifyRequest modifyRequest){
         return ResponseEntity.ok(service.sendModifyRequest(modifyRequest));
     }
