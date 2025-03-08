@@ -1,13 +1,17 @@
 package com.flawlesscoders.ambigu.modules.workplan;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
+import java.util.Collections;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,8 +24,15 @@ import com.flawlesscoders.ambigu.modules.table.TableService;
 import com.flawlesscoders.ambigu.modules.table.DTO.TableWithWaiterDTO;
 import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
 import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
-import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterTableDTO;
+import com.flawlesscoders.ambigu.modules.user.waiter.WaiterService;
+import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterWAvatarDTO;
 import com.flawlesscoders.ambigu.modules.workplan.DTO.AssignmentDTO;
+import com.flawlesscoders.ambigu.modules.workplan.DTO.GetWaiterTableDTO;
+import com.flawlesscoders.ambigu.modules.workplan.historyDisabled.DisabledTableHistory;
+import com.flawlesscoders.ambigu.modules.workplan.historyDisabled.DisabledTableHistoryRepository;
+import com.flawlesscoders.ambigu.modules.workplan.objects.Assignment;
+import com.flawlesscoders.ambigu.modules.workplan.objects.HourWaiter;
+import com.flawlesscoders.ambigu.modules.workplan.objects.WaiterWorkplan;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,6 +43,8 @@ public class WorkplanService {
     private final TableRepository tableRepository;
     private final TableService tableService;
     private final WaiterRepository waiterRepository;
+    private final DisabledTableHistoryRepository disabledTableHistoryRepository;
+    private final WaiterService waiterService;
 
     //method to initialize a workplan
      public Workplan initializeWorkplan(String workplanName) {
@@ -68,8 +81,13 @@ public class WorkplanService {
     }
 
     // Método para agregar una asignación a un Workplan activo
-    public Workplan addAssignmentToWorkplan(String workplanId, String tableId, String waiterId) {
+    public Workplan addAssignmentToWorkplan(String workplanId, String tableId, WaiterWorkplan waiterWorkplan) {
         try {
+            // Validar las horas de inicio y fin
+            HourWaiter.validateHora(waiterWorkplan.getHoraInicio());
+            HourWaiter.validateHora(waiterWorkplan.getHoraFin());
+    
+            // Buscar el plan de trabajo
             Workplan workplan = workplanRepository.findById(workplanId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
     
@@ -77,17 +95,14 @@ public class WorkplanService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay un plan de trabajo activo");
             }
     
+            // Buscar la mesa
             Table table = tableRepository.findById(tableId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
     
-            if (table.isTableWaiter()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mesa ya está asignada a un mesero");
+            if (!table.isEnabled()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al asignar mesero, la mesa está deshabilitada");
             }
     
-            if(table.isEnabled() == false){
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al asignar mesero, la mesa está deshabilitada");
-
-            }
             // Buscar si ya existe una asignación para esta mesa
             Optional<Assignment> existingAssignmentOpt = workplan.getAssigment().stream()
                     .filter(a -> a.getTable().equals(tableId))
@@ -97,26 +112,49 @@ public class WorkplanService {
             if (existingAssignmentOpt.isPresent()) {
                 // Si ya existe una asignación, usarla
                 assignment = existingAssignmentOpt.get();
+    
+                // Validar que las horas no se solapen con las asignaciones existentes
+                for (WaiterWorkplan existingWaiterWorkplan : assignment.getWaiterWorkplan()) {
+                    if (isOverlap(existingWaiterWorkplan, waiterWorkplan)) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las horas se solapan con otra asignación");
+                    }
+                }
             } else {
                 // Si no existe una asignación, crear una nueva
                 assignment = new Assignment();
                 assignment.setTable(tableId);
-                assignment.setWaiters(new ArrayList<>());
+                assignment.setWaiterWorkplan(new ArrayList<>());
                 workplan.getAssigment().add(assignment);
             }
     
             // Agregar el nuevo mesero a la lista de meseros de la asignación
-            assignment.getWaiters().add(waiterId);
+            assignment.getWaiterWorkplan().add(waiterWorkplan);
     
             // Marcar la mesa como asignada a un mesero
             table.setTableWaiter(true);
             tableRepository.save(table);
     
+            // Guardar el plan de trabajo actualizado
             return workplanRepository.save(workplan);
+        } catch (IllegalArgumentException e) {
+            // Capturar excepciones de validación
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
+            // Capturar otras excepciones
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al agregar la asignación");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al agregar la asignación");
         }
+    }
+    
+    // Método para verificar si dos asignaciones se solapan
+    private boolean isOverlap(WaiterWorkplan existing, WaiterWorkplan newWaiterWorkplan) {
+        int existingStart = existing.getHoraInicio().toSeconds();
+        int existingEnd = existing.getHoraFin().toSeconds();
+        int newStart = newWaiterWorkplan.getHoraInicio().toSeconds();
+        int newEnd = newWaiterWorkplan.getHoraFin().toSeconds();
+    
+        // Verificar si las horas se solapan
+        return !(newEnd <= existingStart || newStart >= existingEnd);
     }
 
     //method to get all workplans IN SEARCH (existing)
@@ -134,47 +172,83 @@ public class WorkplanService {
         }
     }
 
-    //method to change waiter of a table
+    // //method to change waiter of a table
     public String changeWaiterToTable(String workplanId, String tableId, String waiterId) {
         try {
+            // Obtener la hora actual del sistema
+            LocalTime currentTime = LocalTime.now();
+    
+            // Buscar el plan de trabajo
             Workplan workplan = workplanRepository.findById(workplanId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
-
+    
             if (!workplan.isPresent()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay un plan de trabajo activo");
             }
-
+    
+            // Buscar la mesa
             Table table = tableRepository.findById(tableId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
-
+    
             if (!table.isTableWaiter()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mesa no tiene un mesero asignado");
             }
-
+    
             // Buscar la asignación que corresponde a la mesa especificada
             Assignment assignment = workplan.getAssigment().stream()
                     .filter(a -> a.getTable().equals(tableId))
                     .findFirst()
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada en este plan de trabajo"));
-
-            // Cambiar el mesero asignado a la mesa
-            assignment.getWaiters().add(waiterId);
-            table.setTableWaiter(true);
-            tableRepository.save(table);
-            workplanRepository.save(workplan);
-
-            return "Se cambió el mesero exitosamente";
+    
+            // Buscar el mesero actual asignado a la mesa en este momento
+            Optional<WaiterWorkplan> currentWaiterOpt = assignment.getWaiterWorkplan().stream()
+                    .filter(waiterWorkplan -> {
+                        LocalTime startTime = LocalTime.of(
+                                waiterWorkplan.getHoraInicio().getHour(),
+                                waiterWorkplan.getHoraInicio().getMinute(),
+                                waiterWorkplan.getHoraInicio().getSecond()
+                        );
+                        LocalTime endTime = LocalTime.of(
+                                waiterWorkplan.getHoraFin().getHour(),
+                                waiterWorkplan.getHoraFin().getMinute(),
+                                waiterWorkplan.getHoraFin().getSecond()
+                        );
+                        // Verificar si la hora actual está dentro del intervalo
+                        return !currentTime.isBefore(startTime) && !currentTime.isAfter(endTime);
+                    })
+                    .findFirst();
+    
+            if (currentWaiterOpt.isPresent()) {
+                // Obtener el mesero actual
+                WaiterWorkplan currentWaiter = currentWaiterOpt.get();
+    
+                // Reemplazar al mesero actual con el nuevo mesero
+                currentWaiter.setWaiter(waiterId);
+    
+                // Guardar los cambios en la base de datos
+                workplanRepository.save(workplan);
+    
+                return "Se cambió el mesero exitosamente";
+            } else {
+                // No hay un mesero asignado en este momento
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay un mesero asignado a esta mesa en este momento");
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al cambiar el mesero de la mesa");
         }
     }
 
-    //method to get all tables with their last waiter in a current workplan 
+    // //method to get all tables with their current waiter hour active 
     public List<TableWithWaiterDTO> getEnabledTablesWithLastWaiter() {
     try {
+        // Obtener la hora actual del sistema
+        LocalTime currentTime = LocalTime.now();
+
+        // Obtener todas las mesas habilitadas
         List<Table> enabledTables = tableService.getEnabledTablesWithWaiter();
 
+        // Buscar el plan de trabajo activo
         Workplan workplan = workplanRepository.findByIsPresent(true)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un plan de trabajo activo"));
 
@@ -189,32 +263,64 @@ public class WorkplanService {
                     if (assignmentOpt.isPresent()) {
                         Assignment assignment = assignmentOpt.get();
 
-                        // Obtener el último mesero de la lista
-                        List<String> waiterIds = assignment.getWaiters();
-                        if (waiterIds.isEmpty()) {
-                            return null; // No hay meseros, no agregar esta mesa
+                        // Buscar el mesero activo en este momento
+                        Optional<WaiterWorkplan> activeWaiterOpt = assignment.getWaiterWorkplan().stream()
+                                .filter(waiterWorkplan -> {
+                                    LocalTime startTime = LocalTime.of(
+                                            waiterWorkplan.getHoraInicio().getHour(),
+                                            waiterWorkplan.getHoraInicio().getMinute(),
+                                            waiterWorkplan.getHoraInicio().getSecond()
+                                    );
+                                    LocalTime endTime = LocalTime.of(
+                                            waiterWorkplan.getHoraFin().getHour(),
+                                            waiterWorkplan.getHoraFin().getMinute(),
+                                            waiterWorkplan.getHoraFin().getSecond()
+                                    );
+                                    // Verificar si la hora actual está dentro del intervalo
+                                    return !currentTime.isBefore(startTime) && !currentTime.isAfter(endTime);
+                                })
+                                .findFirst();
+
+                        if (activeWaiterOpt.isPresent()) {
+                            // Obtener el mesero activo
+                            WaiterWorkplan activeWaiter = activeWaiterOpt.get();
+
+                            // Buscar el mesero en la base de datos
+                            Waiter waiter = waiterRepository.findById(activeWaiter.getWaiter())
+                                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+
+                            // Crear y devolver el DTO
+                            return new TableWithWaiterDTO(
+                                    table.getId(),
+                                    table.getTableIdentifier(),
+                                    waiter.getName(),
+                                    waiter.getLastname_p(),
+                                    table.isTableWaiter(),
+                                    workplan.getId()
+                            );
+                        } else {
+                            // No hay mesero activo en este momento
+                            return new TableWithWaiterDTO(
+                                    table.getId(),
+                                    table.getTableIdentifier(),
+                                    "No hay mesero asignado",
+                                    "",
+                                    table.isTableWaiter(),
+                                    workplan.getId()
+                            );
                         }
-
-                        String lastWaiterId = waiterIds.get(waiterIds.size() - 1);
-
-                        // Buscar el mesero en la base de datos
-                        Waiter waiter = waiterRepository.findById(lastWaiterId)
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
-
-                        // Crear y devolver el DTO
-                        return new TableWithWaiterDTO(table.getId(), table.getTableIdentifier(), waiter.getName(), waiter.getLastname_p(), table.isTableWaiter(),workplan.getId());
                     }
                     return null; // No tiene asignación en el Workplan
                 })
                 .filter(Objects::nonNull) // Eliminar valores nulos
                 .collect(Collectors.toList());
 
-            return result;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas con su último mesero asignado");
-        }
+        return result;
+    } catch (Exception e) {
+        e.printStackTrace();
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas con su mesero activo");
     }
+}
 
     //method to get all workplans, including the ones that are not in search
     public List<Workplan> findAllWorkplans() {
@@ -230,7 +336,7 @@ public class WorkplanService {
         }
     }
 
-    //method to finalize a workplan
+    // //method to finalize a workplan
     public boolean killPresentWorkplan() {
         try {
             // Buscar el plan de trabajo en curso
@@ -244,7 +350,6 @@ public class WorkplanService {
     
                 // Marcar la mesa como disponible
                 foundTable.setTableWaiter(false);
-                foundTable.setDisabledInWorkplan(false);
                 tableRepository.save(foundTable); // Guardar el cambio en la mesa
             }
     
@@ -259,37 +364,8 @@ public class WorkplanService {
         }
     }
     
-    //method to remove a waiter from a table
-    public String removeWaiterToTable(String workplanId, String tableId) {
-        try {
-            Workplan workplan = workplanRepository.findById(workplanId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
 
-            if (!workplan.isPresent()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay un plan de trabajo activo");
-            }
-
-            Table table = tableRepository.findById(tableId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
-
-            if (table.isTableWaiter()) {
-                if(table.getTableClientStatus() == TableClientStatus.OCCUPIED){
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Error al quitar mesero, esta mesa está ocupada por un cliente");
-                }else{
-                    table.setTableWaiter(false);
-                }
-            }
-
-            tableRepository.save(table);
-            workplanRepository.save(workplan);
-            return "Se quitó al mesero exitosamente";
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Error al liberar la mesa de un mesero");
-        }   
-    }
-
-    //method to change favorite status of a workplan
+    // //method to change favorite status of a workplan
     public String changeFavorite(String workplanId) {
         try {
             Workplan workplan = workplanRepository.findById(workplanId)
@@ -307,7 +383,7 @@ public class WorkplanService {
         }
     }
 
-    //method to get all favorite workplans
+    // //method to get all favorite workplans
     public List<Workplan> findAllFavorites() {
         try {
             List<Workplan> favoriteWorkplans = workplanRepository.findByFavoriteWorkplans();
@@ -333,8 +409,10 @@ public class WorkplanService {
         }
     }
 
+    //method to get all waiters in a table on a workplan
     public AssignmentDTO detailsTableInAWorkplanDTO(String workplanId, String tableId) {
         try {
+            // Buscar el plan de trabajo
             Workplan workplan = workplanRepository.findById(workplanId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
     
@@ -348,31 +426,53 @@ public class WorkplanService {
             Table table = tableRepository.findById(assignment.getTable())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
     
-            // Validar la lista de meseros
-            List<String> waiterIds = assignment.getWaiters();
-            if (waiterIds == null || waiterIds.isEmpty()) {
+            // Validar la lista de WaiterWorkplan
+            List<WaiterWorkplan> waiterWorkplans = assignment.getWaiterWorkplan();
+            if (waiterWorkplans == null || waiterWorkplans.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay meseros asignados a esta mesa");
             }
     
-            // Obtener la lista de meseros con `map()` asegurando el tipo de retorno
-            List<GetWaiterTableDTO> waiters = waiterIds.stream()
-                    .map(waiterId -> {
-                        Waiter waiter = waiterRepository.findById(waiterId)
+            // Mapear los WaiterWorkplan a DTOs
+            List<GetWaiterTableDTO> waiters = waiterWorkplans.stream()
+                    .map(waiterWorkplan -> {
+                        // Buscar el mesero correspondiente
+                        Waiter waiter = waiterRepository.findById(waiterWorkplan.getWaiter())
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
-                        return new GetWaiterTableDTO(waiter.getName(), waiter.getLastname_p(), waiter.getShift());
+    
+                        // Formatear las horas de inicio y fin
+                        String horaInicio = String.format("%02d:%02d:%02d",
+                                waiterWorkplan.getHoraInicio().getHour(),
+                                waiterWorkplan.getHoraInicio().getMinute(),
+                                waiterWorkplan.getHoraInicio().getSecond());
+                        String horaFin = String.format("%02d:%02d:%02d",
+                                waiterWorkplan.getHoraFin().getHour(),
+                                waiterWorkplan.getHoraFin().getMinute(),
+                                waiterWorkplan.getHoraFin().getSecond());
+    
+                        // Crear el DTO del mesero con sus horarios
+                        return GetWaiterTableDTO.builder()
+                                .name(waiter.getName())
+                                .lastname_p(waiter.getLastname_p())
+                                .shift(waiter.getShift())
+                                .horaInicio(horaInicio)
+                                .horaFin(horaFin)
+                                .build();
                     })
                     .collect(Collectors.toList());
     
-            // Retornar el DTO con la lista de meseros
-            return new AssignmentDTO(table.getTableIdentifier(), waiters);
+            // Retornar el DTO con la lista de meseros y sus horarios
+            return AssignmentDTO.builder()
+                    .table(table.getTableIdentifier())
+                    .waiters(waiters)
+                    .build();
     
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener los detalles de la mesa en el plan de trabajo");
         }
     }
-    
-    //method to remove a workplan from search but in database still exists
+
+    // //method to remove a workplan from search but in database still exists
     public boolean removeWorkplanToSearch(String workplanId) {
         try {
             Workplan workplan = workplanRepository.findById(workplanId)
@@ -387,30 +487,59 @@ public class WorkplanService {
         }
     }
 
-    //method to change status to a table in a worikplan active
+    // //method to change status to a table in a worikplan active
     public String changeStatusTableInAWorkplan(String tableId) {
         try {
             // Verificar si hay un Workplan activo
-            boolean workplanExists = workplanRepository.findByIsPresent(true).isPresent();
+            Workplan activeWorkplan = workplanRepository.findByIsPresent(true)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay un Workplan activo"));
     
-            if (!workplanExists) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay un Workplan activo");
-            }
-    
+            // Buscar la mesa
             Table table = tableRepository.findById(tableId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
     
-            // No se puede deshabilitar si tiene mesero asignado
-            if (table.isTableWaiter()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mesa tiene un mesero asignado, no se puede deshabilitar.");
+            // No se puede deshabilitar si la mesa está ocupada
+            if (table.getTableClientStatus() == TableClientStatus.OCCUPIED) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mesa está ocupada, no se puede deshabilitar.");
             }
     
             // Cambiar el estado de la mesa
             boolean newStatus = !table.isEnabled();
             table.setEnabled(newStatus);
-            table.setDisabledInWorkplan(!newStatus);
     
-            // Guardar los cambios
+            // Si la mesa se está desactivando, eliminar las asignaciones de meseros y guardar en el historial
+            if (!newStatus) {
+                // Buscar la asignación correspondiente a la mesa
+                Optional<Assignment> assignmentOpt = activeWorkplan.getAssigment().stream()
+                        .filter(a -> a.getTable().equals(tableId))
+                        .findFirst();
+    
+                if (assignmentOpt.isPresent()) {
+                    Assignment assignment = assignmentOpt.get();
+    
+                    // Eliminar todas las asignaciones de meseros (WaiterWorkplan) para esta mesa
+                    assignment.getWaiterWorkplan().clear();
+    
+                    // Guardar los cambios en el Workplan
+                    workplanRepository.save(activeWorkplan);
+                }
+    
+                // Guardar la mesa desactivada en el historial
+                DisabledTableHistory disabledTableHistory = new DisabledTableHistory();
+                disabledTableHistory.setId(table.getId());
+                disabledTableHistory.setTableIdentifier(table.getTableIdentifier());
+                disabledTableHistory.setTableWaiter(table.isTableWaiter());
+                disabledTableHistory.setEnabled(table.isEnabled());
+                disabledTableHistory.setWorkplanId(activeWorkplan.getId()); // ID del Workplan activo
+    
+                // Guardar en la colección de historial
+                disabledTableHistoryRepository.save(disabledTableHistory);
+            } else {
+                // Si la mesa se está habilitando, eliminar del historial de mesas desactivadas
+                disabledTableHistoryRepository.deleteById(tableId);
+            }
+    
+            // Guardar los cambios en la mesa
             tableRepository.save(table);
     
             return "Estado de la mesa cambiado exitosamente";
@@ -419,70 +548,47 @@ public class WorkplanService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al cambiar el estado de la mesa en el Workplan");
         }
     }
+
+    // //method to get all disabled tables in a workplan
+    //method in history...
     
-    //method to get all disabled tables in a workplan
-    public List<Table> getDisabledTablesInAWorkplan() {
-        try {
-            // Verificar si el Workplan existe
-            Workplan workplan = workplanRepository.findByIsPresent(true)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay plan de trabajo activo"));
-    
-            // Obtener mesas deshabilitadas por el líder en este Workplan
-            List<Table> disabledTables = tableRepository.findByDisabledInWorkplanTrue();
-    
-            if (disabledTables.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay mesas deshabilitadas en este Workplan");
-            }
-    
-            return disabledTables;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas deshabilitadas en el Workplan");
-        }
-    }
-    
-    //method to restart a workplan existing
+    //method to reutilice a workplan to still existing
     public boolean restartWorkplan(String workplanId) {
         try {
+            // Buscar el plan de trabajo
             Workplan workplan = workplanRepository.findById(workplanId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
     
-            //obtener todas las asignaciones existentes
+            // Obtener todas las asignaciones existentes
             List<Assignment> updatedAssignments = workplan.getAssigment().stream().map(assignment -> {
-                // 3️⃣ Buscar la mesa correspondiente
+                // Buscar la mesa correspondiente
                 Table table = tableRepository.findById(assignment.getTable())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
     
-                //verificar si hay meseros asignados previamente
-                List<String> waiterIds = assignment.getWaiters();
-                if (!waiterIds.isEmpty()) {
-                    // 5️⃣ Obtener el último mesero asignado
-                    String lastWaiterId = waiterIds.get(waiterIds.size() - 1);
-    
-                    //verificar si el mesero sigue existiendo
-                    Waiter waiter = waiterRepository.findById(lastWaiterId)
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Último mesero asignado no encontrado"));
-    
-                    // crear un nuevo assignment con la misma mesa pero solo con el último mesero
+                // Verificar si hay meseros asignados previamente
+                List<WaiterWorkplan> waiterWorkplans = assignment.getWaiterWorkplan();
+                if (!waiterWorkplans.isEmpty()) {
+                    // Crear una nueva asignación con la misma mesa y todos los meseros asignados
                     Assignment newAssignment = new Assignment();
                     newAssignment.setTable(table.getId());
-                    newAssignment.setWaiters(new ArrayList<>(List.of(lastWaiterId)));
-                    
+                    newAssignment.setWaiterWorkplan(new ArrayList<>(waiterWorkplans)); // Conservar todos los waiterWorkplan
+    
+                    // Marcar la mesa como ocupada (si es necesario)
                     table.setTableWaiter(true);
                     tableRepository.save(table);
                     return newAssignment;
                 } else {
-                    //si la mesa no tiene meseros previos, mantener la asignación vacía
+                    // Si la mesa no tiene meseros previos, mantener la asignación vacía
                     Assignment newAssignment = new Assignment();
                     newAssignment.setTable(table.getId());
-                    newAssignment.setWaiters(new ArrayList<>());
+                    newAssignment.setWaiterWorkplan(new ArrayList<>());
                     return newAssignment;
-                }         
+                }
             }).collect(Collectors.toList());
     
-            //actualizar el Workplan con los nuevos assignments y reiniciarlo
+            // Actualizar el Workplan con los nuevos assignments y reiniciarlo
             workplan.setAssigment(updatedAssignments);
-            workplan.setPresent(true);
+            workplan.setPresent(true); // Reiniciar el estado del plan de trabajo
             workplanRepository.save(workplan);
             return true;
         } catch (Exception e) {
@@ -491,29 +597,26 @@ public class WorkplanService {
         }
     }
     
-    //method to count the number of tables that one waiter has in a workplan
+    // //method to count the number of tables that one waiter has in a workplan
     public int countTablesByWaiterInWorkplan(String workplanId, String waiterId) {
         try {
+            // Buscar el plan de trabajo
             Workplan workplan = workplanRepository.findById(workplanId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
     
-            // Contar solo las mesas donde el `waiterId` es el último mesero en la lista de waiters y `tableWaiter == true`
+            // Contar todas las mesas donde el `waiterId` esté asignado
             long count = workplan.getAssigment().stream()
                     .filter(assignment -> {
-                        List<String> waiters = assignment.getWaiters();
-                        Table table = tableRepository.findById(assignment.getTable())
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
-    
-                        return table.isTableWaiter() //que aún tenga mesero asignado
-                                && !waiters.isEmpty()
-                                && waiters.get(waiters.size() - 1).equals(waiterId); // solo si es el último
+                        // Verificar si el mesero está asignado a esta mesa
+                        return assignment.getWaiterWorkplan().stream()
+                                .anyMatch(waiterWorkplan -> waiterWorkplan.getWaiter().equals(waiterId));
                     })
                     .count();
     
             return (int) count;
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al contar las mesas asignadas al último mesero en el plan de trabajo");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al contar las mesas asignadas al mesero en el plan de trabajo");
         }
     }
 
@@ -530,6 +633,7 @@ public class WorkplanService {
         }
     }
     
+    //method to get all tables of one waiter by their email
     public List<Table> getTablesInChargeByWaiterInWorkplan(String waiterEmail) {
         try {
             // Buscar al mesero por email
@@ -542,16 +646,35 @@ public class WorkplanService {
             Workplan workplan = workplanRepository.findByIsPresent(true)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un plan de trabajo activo"));
     
-            // Filtrar las mesas donde el `waiterId` es el último mesero en la lista de waiters
+            // Obtener la hora actual
+            LocalTime now = LocalTime.now();
+    
+            // Filtrar las mesas donde el `waiterId` está asignado en algún WaiterWorkplan y la hora actual está dentro del rango de horario
             List<Table> tables = workplan.getAssigment().stream()
                     .filter(assignment -> {
-                        List<String> waiters = assignment.getWaiters();
-                        Table table = tableRepository.findById(assignment.getTable())
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
+                        // Verificar si el mesero está asignado a esta mesa y la hora actual está dentro de su horario
+                        return assignment.getWaiterWorkplan().stream()
+                                .anyMatch(waiterWorkplan -> {
+                                    // Comparar el ID del mesero
+                                    if (!waiterWorkplan.getWaiter().equals(waiterId)) {
+                                        return false;
+                                    }
     
-                        return table.isTableWaiter() // Que aún tenga mesero asignado
-                                && !waiters.isEmpty()
-                                && waiters.get(waiters.size() - 1).equals(waiterId); // ✅ Solo si es el último mesero asignado
+                                    // Convertir las horas de inicio y fin a LocalTime
+                                    LocalTime horaInicio = LocalTime.of(
+                                            waiterWorkplan.getHoraInicio().getHour(),
+                                            waiterWorkplan.getHoraInicio().getMinute(),
+                                            waiterWorkplan.getHoraInicio().getSecond()
+                                    );
+                                    LocalTime horaFin = LocalTime.of(
+                                            waiterWorkplan.getHoraFin().getHour(),
+                                            waiterWorkplan.getHoraFin().getMinute(),
+                                            waiterWorkplan.getHoraFin().getSecond()
+                                    );
+    
+                                    // Verificar si la hora actual está dentro del rango de horario
+                                    return !now.isBefore(horaInicio) && !now.isAfter(horaFin);
+                                });
                     })
                     .map(assignment -> tableRepository.findById(assignment.getTable())
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada")))
@@ -563,6 +686,100 @@ public class WorkplanService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas asignadas al mesero en el plan de trabajo");
         }
     }
+
+    //method to get all waiters who aren't assigned to a specific table
+    public List<GetWaiterWAvatarDTO> getWaitersNotAssignedToTable(String tableId) {
+        try {
+            // Obtener todos los meseros activos usando WaiterService
+            List<GetWaiterWAvatarDTO> allWaiters = waiterService.getWaitersWAvatar().getBody();
     
+            if (allWaiters == null || allWaiters.isEmpty()) {
+                return Collections.emptyList(); // No hay meseros activos
+            }
     
+            // Obtener el Workplan activo
+            Workplan activeWorkplan = workplanRepository.findByIsPresent(true)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un Workplan activo"));
+    
+            // Obtener la asignación de la mesa específica
+            Optional<Assignment> assignmentOpt = activeWorkplan.getAssigment().stream()
+                    .filter(a -> a.getTable().equals(tableId))
+                    .findFirst();
+    
+            // Si no hay asignación para la mesa, todos los meseros están disponibles
+            if (assignmentOpt.isEmpty()) {
+                return allWaiters;
+            }
+    
+            // Obtener los IDs de los meseros asignados a la mesa
+            Assignment assignment = assignmentOpt.get();
+            Set<String> assignedWaiterIds = assignment.getWaiterWorkplan().stream()
+                    .map(WaiterWorkplan::getWaiter)
+                    .collect(Collectors.toSet());
+    
+            // Filtrar los meseros que no están asignados a la mesa
+            return allWaiters.stream()
+                    .filter(waiter -> !assignedWaiterIds.contains(waiter.getId()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener los meseros no asignados a la mesa");
+        }
+    }
+
+    //method to update just the time to waiters in a specific table
+    public WaiterWorkplan updateWaiterWorkplanHours(
+        String workplanId,
+        String tableId,
+        String waiterId,
+        HourWaiter newHoraInicio,
+        HourWaiter newHoraFin) {
+    
+        try {
+            // Buscar el plan de trabajo
+            Workplan workplan = workplanRepository.findById(workplanId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
+    
+            // Buscar la asignación que corresponde a la mesa especificada
+            Assignment assignment = workplan.getAssigment().stream()
+                    .filter(a -> a.getTable().equals(tableId))
+                    .findFirst()
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada en este plan de trabajo"));
+    
+            // Buscar el WaiterWorkplan que se desea modificar
+            WaiterWorkplan waiterWorkplan = assignment.getWaiterWorkplan().stream()
+                    .filter(ww -> ww.getWaiter().equals(waiterId))
+                    .findFirst()
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el mesero en esta mesa"));
+    
+            // Validar que los nuevos horarios no se solapen con otros WaiterWorkplan en la misma mesa
+            boolean isOverlap = assignment.getWaiterWorkplan().stream()
+                    .filter(ww -> !ww.getWaiter().equals(waiterId)) // Excluir el WaiterWorkplan actual
+                    .anyMatch(ww -> {
+                        LocalTime startTime = LocalTime.of(ww.getHoraInicio().getHour(), ww.getHoraInicio().getMinute(), ww.getHoraInicio().getSecond());
+                        LocalTime endTime = LocalTime.of(ww.getHoraFin().getHour(), ww.getHoraFin().getMinute(), ww.getHoraFin().getSecond());
+                        LocalTime newStartTime = LocalTime.of(newHoraInicio.getHour(), newHoraInicio.getMinute(), newHoraInicio.getSecond());
+                        LocalTime newEndTime = LocalTime.of(newHoraFin.getHour(), newHoraFin.getMinute(), newHoraFin.getSecond());
+                        return !(newEndTime.isBefore(startTime) || newStartTime.isAfter(endTime));
+                    });
+    
+            if (isOverlap) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los nuevos horarios se solapan con otro mesero en esta mesa");
+            }
+    
+            // Actualizar solo las horas del WaiterWorkplan
+            waiterWorkplan.setHoraInicio(newHoraInicio);
+            waiterWorkplan.setHoraFin(newHoraFin);
+    
+            // Guardar los cambios en la base de datos
+            workplanRepository.save(workplan);
+    
+            return waiterWorkplan; // Devolver el WaiterWorkplan modificado
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al actualizar los horarios del mesero");
+        }
+    }
+
 }
+

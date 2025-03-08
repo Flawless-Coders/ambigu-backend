@@ -33,6 +33,4 @@ public class Table {
     @Schema(description = "Indicates if table has a waiter",  defaultValue = "false")
     private boolean tableWaiter;
 
-    @Schema(description = "Indicates if table has been disabled in a workplan",  defaultValue = "false")
-    private boolean disabledInWorkplan;
 }
