@@ -53,8 +53,9 @@ public class AdminService {
     public ResponseEntity<Void> updateAdminAvatar(String id, MultipartFile avatar) {
         try{
             Admin existingAdmin = adminRepository.findAdminById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
-            String base64imag = Base64.getEncoder().encodeToString(avatar.getBytes());
-            existingAdmin.setAvatarBase64(base64imag);
+            String contentType = avatar.getContentType(); // Obtiene el tipo MIME
+            String base64Image = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(avatar.getBytes());
+            existingAdmin.setAvatarBase64(base64Image);
             adminRepository.save(existingAdmin);
             return ResponseEntity.ok().build();
         } catch (IOException e) {

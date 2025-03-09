@@ -57,10 +57,11 @@ public class AdminController {
         @ApiResponse(responseCode = "200", description = "Admin avatar updated"),
         @ApiResponse(responseCode = "404", description = "Admin not found"),
     })
-    @PatchMapping("/avatar/{id}")
+    @PatchMapping(value = "/avatar/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<Void> updateAdminAvatar(
         @Parameter(description = "Admin id", required = true) 
         @PathVariable String id,
+        @Parameter(description = "Admin avatar file", required = true)
         @RequestPart("avatar") MultipartFile avatar
         ) {
         return adminService.updateAdminAvatar(id, avatar);

@@ -12,7 +12,6 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Document(collection="users")
-@TypeAlias("admin")
 @Getter
 @Setter
 @NoArgsConstructor
