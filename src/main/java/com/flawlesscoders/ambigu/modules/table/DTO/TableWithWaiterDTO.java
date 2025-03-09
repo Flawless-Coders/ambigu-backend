@@ -11,5 +11,6 @@ public class TableWithWaiterDTO {
     private String lastWaiterName;
     private String lastname_p;
     private boolean tableWaiter;
+    private boolean isEnabled;
     private String workplanId;
 }

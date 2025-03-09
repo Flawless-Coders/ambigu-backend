@@ -295,6 +295,7 @@ public class WorkplanService {
                                     waiter.getName(),
                                     waiter.getLastname_p(),
                                     table.isTableWaiter(),
+                                    table.isEnabled(),
                                     workplan.getId()
                             );
                         } else {
@@ -302,9 +303,10 @@ public class WorkplanService {
                             return new TableWithWaiterDTO(
                                     table.getId(),
                                     table.getTableIdentifier(),
-                                    "No hay mesero asignado",
+                                    "Sin turno",
                                     "",
                                     table.isTableWaiter(),
+                                    table.isEnabled(),
                                     workplan.getId()
                             );
                         }
@@ -439,17 +441,18 @@ public class WorkplanService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
     
                         // Formatear las horas de inicio y fin
-                        String horaInicio = String.format("%02d:%02d:%02d",
+                        String horaInicio = String.format("%02d:%02d",
                                 waiterWorkplan.getHoraInicio().getHour(),
                                 waiterWorkplan.getHoraInicio().getMinute(),
                                 waiterWorkplan.getHoraInicio().getSecond());
-                        String horaFin = String.format("%02d:%02d:%02d",
+                        String horaFin = String.format("%02d:%02d",
                                 waiterWorkplan.getHoraFin().getHour(),
                                 waiterWorkplan.getHoraFin().getMinute(),
                                 waiterWorkplan.getHoraFin().getSecond());
     
                         // Crear el DTO del mesero con sus horarios
                         return GetWaiterTableDTO.builder()
+                                .waiterId(waiter.getId())
                                 .name(waiter.getName())
                                 .lastname_p(waiter.getLastname_p())
                                 .shift(waiter.getShift())
@@ -727,58 +730,43 @@ public class WorkplanService {
     }
 
     //method to update just the time to waiters in a specific table
-    public WaiterWorkplan updateWaiterWorkplanHours(
-        String workplanId,
-        String tableId,
-        String waiterId,
-        HourWaiter newHoraInicio,
-        HourWaiter newHoraFin) {
-    
+    public WaiterWorkplan updateWaiterWorkplanHours(String workplanId, String tableId, String waiterId, WaiterWorkplan newHourWaiter) {
         try {
+            // Validar la nueva hora
+            HourWaiter.validateHora(newHourWaiter.getHoraInicio());
+            HourWaiter.validateHora(newHourWaiter.getHoraFin());
+    
             // Buscar el plan de trabajo
             Workplan workplan = workplanRepository.findById(workplanId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
     
-            // Buscar la asignación que corresponde a la mesa especificada
+            // Buscar la mesa dentro del plan de trabajo
             Assignment assignment = workplan.getAssigment().stream()
                     .filter(a -> a.getTable().equals(tableId))
                     .findFirst()
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada en este plan de trabajo"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no asignada en el plan de trabajo"));
     
-            // Buscar el WaiterWorkplan que se desea modificar
+            // Buscar el mesero dentro de la asignación
             WaiterWorkplan waiterWorkplan = assignment.getWaiterWorkplan().stream()
-                    .filter(ww -> ww.getWaiter().equals(waiterId))
+                    .filter(w -> w.getWaiter().equals(waiterId))
                     .findFirst()
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el mesero en esta mesa"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado en la asignación"));
     
-            // Validar que los nuevos horarios no se solapen con otros WaiterWorkplan en la misma mesa
-            boolean isOverlap = assignment.getWaiterWorkplan().stream()
-                    .filter(ww -> !ww.getWaiter().equals(waiterId)) // Excluir el WaiterWorkplan actual
-                    .anyMatch(ww -> {
-                        LocalTime startTime = LocalTime.of(ww.getHoraInicio().getHour(), ww.getHoraInicio().getMinute(), ww.getHoraInicio().getSecond());
-                        LocalTime endTime = LocalTime.of(ww.getHoraFin().getHour(), ww.getHoraFin().getMinute(), ww.getHoraFin().getSecond());
-                        LocalTime newStartTime = LocalTime.of(newHoraInicio.getHour(), newHoraInicio.getMinute(), newHoraInicio.getSecond());
-                        LocalTime newEndTime = LocalTime.of(newHoraFin.getHour(), newHoraFin.getMinute(), newHoraFin.getSecond());
-                        return !(newEndTime.isBefore(startTime) || newStartTime.isAfter(endTime));
-                    });
+            // Actualizar únicamente el objeto hora
+            waiterWorkplan.setHoraInicio(newHourWaiter.getHoraInicio());
+            waiterWorkplan.setHoraFin(newHourWaiter.getHoraFin());
     
-            if (isOverlap) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los nuevos horarios se solapan con otro mesero en esta mesa");
-            }
-    
-            // Actualizar solo las horas del WaiterWorkplan
-            waiterWorkplan.setHoraInicio(newHoraInicio);
-            waiterWorkplan.setHoraFin(newHoraFin);
-    
-            // Guardar los cambios en la base de datos
+            // Guardar el plan de trabajo actualizado
             workplanRepository.save(workplan);
     
-            return waiterWorkplan; // Devolver el WaiterWorkplan modificado
+            // Devolver el waiterWorkplan actualizado
+            return waiterWorkplan;
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al actualizar los horarios del mesero");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al actualizar la hora del mesero");
         }
     }
-
 }
 
