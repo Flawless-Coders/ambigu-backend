@@ -9,7 +9,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.flawlesscoders.ambigu.modules.auth.BlacklistToken.BlacklistTokenRepository;
+import com.flawlesscoders.ambigu.modules.auth.blacklistToken.BlacklistTokenRepository;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;

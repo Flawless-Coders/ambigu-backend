@@ -11,4 +11,5 @@ public class GetAdminDTO {
     private String lastname_p;
     private String lastname_m;
     private String email;
+    private String avatarBase64;
 }
