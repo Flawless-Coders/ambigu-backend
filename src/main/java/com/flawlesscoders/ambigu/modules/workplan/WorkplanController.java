@@ -10,7 +10,6 @@ import com.flawlesscoders.ambigu.modules.table.Table;
 import com.flawlesscoders.ambigu.modules.table.DTO.TableWithWaiterDTO;
 import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterWAvatarDTO;
 import com.flawlesscoders.ambigu.modules.workplan.DTO.AssignmentDTO;
-import com.flawlesscoders.ambigu.modules.workplan.DTO.HoursWaiterDTO;
 import com.flawlesscoders.ambigu.modules.workplan.objects.WaiterWorkplan;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -259,18 +258,8 @@ public class WorkplanController {
         @ApiResponse(responseCode = "500", description = "Error en el servidor")
     })
     @PutMapping("/{workplanId}/tables/{tableId}/waiters/{waiterId}/updateHours")
-    public ResponseEntity<WaiterWorkplan> updateWaiterWorkplanHours(
-        @PathVariable String workplanId,   // ID del plan de trabajo
-        @PathVariable String tableId,      // ID de la mesa
-        @PathVariable String waiterId,     // ID del mesero
-        @RequestBody HoursWaiterDTO request) { // Cuerpo con las nuevas horas
-        return ResponseEntity.ok(workplanService.updateWaiterWorkplanHours(
-            workplanId,
-            tableId,
-            waiterId,
-            request.getHoraInicio(),
-            request.getHoraFin()
-        ));
+    public ResponseEntity<WaiterWorkplan> updateWaiterHours(@PathVariable String workplanId, @PathVariable String tableId, @PathVariable String waiterId, @RequestBody WaiterWorkplan newHourWaiter){
+        return ResponseEntity.ok(workplanService.updateWaiterWorkplanHours(workplanId, tableId, waiterId, newHourWaiter));
     }
         
 }
