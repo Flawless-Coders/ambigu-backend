@@ -125,7 +125,7 @@ public class TableService {
     public List<Table> getEnabledTablesWithoutWaiter(){
         try {
             if(tableRepository.findEnabledTablesWithoutWaiter().isEmpty()){
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No hay mesas sin mesero");
+                return null;
             }else{
                 return tableRepository.findEnabledTablesWithoutWaiter();
             }
