@@ -2,6 +2,7 @@ package com.flawlesscoders.ambigu.modules.order;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
 import com.flawlesscoders.ambigu.modules.table.TableRepository;
 import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
 import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
+import com.flawlesscoders.ambigu.modules.workplan.WorkplanService;
 
 import lombok.AllArgsConstructor;
 /**
@@ -31,6 +33,7 @@ public class OrderService {
     private final ModifyRequestRepository requestRepository;
     private final TableRepository tableRepository;
     private final WaiterRepository waiterRepository;
+    private final WorkplanService workplanService;
 
     /**
      * Retrieves all registered orders.
@@ -82,6 +85,9 @@ public class OrderService {
 
             repository.save(order);
 
+            Table table = tableRepository.findByTableIdentifier(order.getTable());
+            table.setTableClientStatus(TableClientStatus.OCCUPIED);
+            tableRepository.save(table);
             return order;
         }catch(Exception e){
             e.printStackTrace();
@@ -132,10 +138,13 @@ public class OrderService {
             if (deleteRequestFound != null){
                 Order found = repository.findById(deleteRequestFound.getOrderId()).orElse(null);
                 if (found != null){
+                    Table table = tableRepository.findByTableIdentifier(found.getTable());
                     found.setDeleted(true);
                     repository.save(found);
                     deleteRequestFound.setDeletedRequest(true);
                     requestRepository.save(deleteRequestFound);
+                    table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
+                    tableRepository.save(table);
                     return true;
                     
                 }else{
@@ -212,9 +221,16 @@ public class OrderService {
      * @return List of current orders.
      */
     public List<Order> getCurrentOrders(String waiterEmail){
-        Waiter waiter = waiterRepository.findByEmail(waiterEmail).
-        orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
-        return repository.getCurrentOrders(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
+        List <Table> tables =workplanService.getTablesInChargeByWaiterInWorkplan(waiterEmail);
+        List <Order> orders = new ArrayList<>();
+        
+        for (Table table : tables) {
+            Order order = repository.getCurrentOrders(table.getTableIdentifier());
+            if (order != null) { // Verifica si la orden no es null
+                orders.add(order);
+            }
+        }
+        return orders != null ? orders : Collections.emptyList();
     }
 
     /**
