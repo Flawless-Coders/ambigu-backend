@@ -9,6 +9,7 @@ import lombok.Data;
 @AllArgsConstructor
 @Builder
 public class GetWaiterTableDTO {
+    private String waiterId;
     private String name;
     private String lastname_p;
     private Shift shift;
