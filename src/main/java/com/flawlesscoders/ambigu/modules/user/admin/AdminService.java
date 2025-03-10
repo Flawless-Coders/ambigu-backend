@@ -3,14 +3,11 @@ package com.flawlesscoders.ambigu.modules.user.admin;
 import java.io.IOException;
 import java.util.Base64;
 
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
 import com.flawlesscoders.ambigu.modules.user.admin.DTO.GetAdminDTO;
 import com.flawlesscoders.ambigu.modules.user.admin.DTO.UpdatePasswordDTO;
