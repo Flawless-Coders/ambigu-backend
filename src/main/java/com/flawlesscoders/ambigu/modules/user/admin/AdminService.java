@@ -4,10 +4,13 @@ import java.io.IOException;
 import java.util.Base64;
 
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
 import com.flawlesscoders.ambigu.modules.user.admin.DTO.GetAdminDTO;
 import com.flawlesscoders.ambigu.modules.user.admin.DTO.UpdatePasswordDTO;
@@ -70,7 +73,7 @@ public class AdminService {
             Admin existingAdmin = adminRepository.findAdminById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
             String contentType = avatar.getContentType(); 
             if(contentType == null || !contentType.startsWith("image/")){
-                throw new RuntimeException("Invalid image");
+                return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
             }
             String base64Image = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(avatar.getBytes());
             existingAdmin.setAvatarBase64(base64Image);
