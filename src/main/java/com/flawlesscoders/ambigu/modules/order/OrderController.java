@@ -95,4 +95,9 @@ public class OrderController {
     public ResponseEntity<Order> addDishes(@PathVariable String orderId, @RequestBody List<OrderDishes> dishes){
         return ResponseEntity.ok(service.addDishes(dishes, orderId));
     }
+
+    @GetMapping("/currentTableOrder/{tableName}")
+    public ResponseEntity<Order> getCurrentTableOrder(@PathVariable String tableName){
+        return ResponseEntity.ok(service.getCurrentTableOrder(tableName));
+    }
 }

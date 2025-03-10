@@ -225,7 +225,7 @@ public class OrderService {
         List <Order> orders = new ArrayList<>();
         
         for (Table table : tables) {
-            Order order = repository.getCurrentOrders(table.getTableIdentifier());
+            Order order = repository.getCurrentOrder(table.getTableIdentifier());
             if (order != null) { // Verifica si la orden no es null
                 orders.add(order);
             }
@@ -244,18 +244,43 @@ public class OrderService {
         return repository.getFinalizedOrders(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
     }
 
-    public Order addDishes(List<OrderDishes> dishes, String orderId){
-        Order order = repository.findById(orderId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if(order.getDishes().isEmpty()){
+     public Order addDishes(List<OrderDishes> dishes, String orderId) {
+        Order order = repository.findById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        float currentTotal = order.getTotal();
+        float totalNewDishes = 0;
+
+        if (order.getDishes() == null) {
             order.setDishes(new ArrayList<>());
         }
-
-        for (OrderDishes orderDishes : dishes) {
-            order.getDishes().add(orderDishes);
+    
+        try {
+            for (OrderDishes orderDishes : dishes) {
+                boolean dishExists = false; 
+                for (OrderDishes orderDishesOriginal : order.getDishes()) {
+                    if (orderDishes.getDishId().equals(orderDishesOriginal.getDishId())) {
+                        orderDishesOriginal.setQuantity(orderDishesOriginal.getQuantity() + orderDishes.getQuantity());
+                        dishExists = true; 
+                    }
+                }
+                if (!dishExists) {
+                    order.getDishes().add(orderDishes);
+                }
+                totalNewDishes += (orderDishes.getQuantity() * orderDishes.getUnitPrice());
+            }
+            order.setTotal(currentTotal + totalNewDishes);
+            return repository.save(order);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ocurrió un error fatal");
         }
+    }
 
-        return repository.save(order);
+    public Order getCurrentTableOrder(String tableName) {
+        Order order = repository.getCurrentOrder(tableName);
+        if (order != null) {
+            return repository.save(order);
+        } else {
+            return null;
+        }
     }
 }
-
-
