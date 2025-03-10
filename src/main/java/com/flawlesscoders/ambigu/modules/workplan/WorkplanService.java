@@ -11,6 +11,9 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.Collections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -44,6 +47,8 @@ public class WorkplanService {
     private final WaiterRepository waiterRepository;
     private final DisabledTableHistoryRepository disabledTableHistoryRepository;
     private final WaiterService waiterService;
+    private static final Logger logger = LoggerFactory.getLogger(WorkplanService.class);
+
 
     //method to initialize a workplan
      public Workplan initializeWorkplan(String workplanName) {
@@ -179,6 +184,23 @@ public class WorkplanService {
         }
     }
 
+    // Método optimizado para obtener mesas de un Workplan
+    public List<Table> getTablesByWorkplan(String workplanId) {
+        try {
+            Workplan workplan = workplanRepository.findById(workplanId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
+
+            return workplan.getAssigment().stream()
+                    .map(assignment -> tableRepository.findById(assignment.getTable()).orElse(null))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error al obtener mesas del Workplan", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al obtener las mesas del WorkPlan");
+        }
+    }
+    
+    
     // //method to change waiter of a table
     public String changeWaiterToTable(String workplanId, String tableId, String waiterId) {
         try {
