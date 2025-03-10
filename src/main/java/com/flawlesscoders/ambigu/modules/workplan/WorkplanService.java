@@ -112,6 +112,14 @@ public class WorkplanService {
                 // Si ya existe una asignación, usarla
                 assignment = existingAssignmentOpt.get();
     
+                // Validar que el mesero no esté ya asignado a esta mesa
+                boolean isWaiterAlreadyAssigned = assignment.getWaiterWorkplan().stream()
+                        .anyMatch(w -> w.getWaiter().equals(waiterWorkplan.getWaiter()));
+    
+                if (isWaiterAlreadyAssigned) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El mesero ya está asignado a esta mesa");
+                }
+    
                 // Validar que las horas no se solapen con las asignaciones existentes
                 for (WaiterWorkplan existingWaiterWorkplan : assignment.getWaiterWorkplan()) {
                     if (isOverlap(existingWaiterWorkplan, waiterWorkplan)) {
@@ -539,6 +547,13 @@ public class WorkplanService {
             } else {
                 // Si la mesa se está habilitando, eliminar del historial de mesas desactivadas
                 disabledTableHistoryRepository.deleteById(tableId);
+    
+                // Establecer tableWaiter en false
+                table.setTableWaiter(false);
+    
+                // Eliminar la asignación de la mesa del Workplan activo
+                activeWorkplan.getAssigment().removeIf(a -> a.getTable().equals(tableId));
+                workplanRepository.save(activeWorkplan);
             }
     
             // Guardar los cambios en la mesa
@@ -751,6 +766,25 @@ public class WorkplanService {
                     .filter(w -> w.getWaiter().equals(waiterId))
                     .findFirst()
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado en la asignación"));
+    
+            // Convertir las horas a segundos para facilitar la comparación
+            int newHoraInicio = newHourWaiter.getHoraInicio().toSeconds();
+            int newHoraFin = newHourWaiter.getHoraFin().toSeconds();
+    
+            // Verificar si el nuevo rango de horas se solapa con algún rango existente de otros meseros
+            boolean isOverlappingWithOthers = assignment.getWaiterWorkplan().stream()
+                    .filter(w -> !w.getWaiter().equals(waiterId)) // Excluir el rango de horas del mesero actual
+                    .anyMatch(w -> {
+                        int existingHoraInicio = w.getHoraInicio().toSeconds();
+                        int existingHoraFin = w.getHoraFin().toSeconds();
+    
+                        // Verificar si hay solapamiento
+                        return (newHoraInicio < existingHoraFin && newHoraFin > existingHoraInicio);
+                    });
+    
+            if (isOverlappingWithOthers) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nuevo rango de horas se solapa con un rango existente de otro mesero");
+            }
     
             // Actualizar únicamente el objeto hora
             waiterWorkplan.setHoraInicio(newHourWaiter.getHoraInicio());
