@@ -37,4 +37,6 @@ public class Dish {
     @NotBlank(message = "El estado del platillo es obligatorio.")
     @Schema(description = "Indicates whether the dish is active or inactive.")
     private boolean status;
+
+    private float price;
 }

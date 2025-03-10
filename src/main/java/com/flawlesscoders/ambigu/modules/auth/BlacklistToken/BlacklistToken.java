@@ -1,4 +1,4 @@
-package com.flawlesscoders.ambigu.modules.auth.blacklistToken;
+package com.flawlesscoders.ambigu.modules.auth.BlacklistToken;
 
 import java.util.Date;
 

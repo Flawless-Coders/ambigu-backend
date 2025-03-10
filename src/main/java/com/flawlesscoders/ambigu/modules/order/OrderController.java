@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 @RestController
-@RequestMapping("/order")
+@RequestMapping("api/order")
 @AllArgsConstructor
 public class OrderController {
     private final OrderService service;
@@ -79,15 +79,25 @@ public class OrderController {
     
     @Operation(summary = "Get current orders", description = "Returns a list of all current orders")
     @ApiResponse(responseCode = "200", description = "List retrieved successfully")
-    @GetMapping("/currentOrders")
-    public ResponseEntity<List<Order>> getCurrentOrders(){
-        return ResponseEntity.ok(service.getCurrentOrders());
+    @GetMapping("/currentOrders/{waiterEmail}")
+    public ResponseEntity<List<Order>> getCurrentOrders(@PathVariable String waiterEmail){
+        return ResponseEntity.ok(service.getCurrentOrders(waiterEmail));
     }
 
     @Operation(summary = "Get finalized orders", description = "Returns a list of all finalized orders")
     @ApiResponse(responseCode = "200", description = "List retrieved successfully")
-    @GetMapping("/finalizedOrders")
-    public ResponseEntity<List<Order>> getFinalizedOrders(){
-        return ResponseEntity.ok(service.getFinalizedOrders());
+    @GetMapping("/finalizedOrders/{waiterEmail}")
+    public ResponseEntity<List<Order>> getFinalizedOrders(@PathVariable String waiterEmail){
+        return ResponseEntity.ok(service.getFinalizedOrders(waiterEmail));
+    }
+
+    @PutMapping("/addDishes/{orderId}")
+    public ResponseEntity<Order> addDishes(@PathVariable String orderId, @RequestBody List<OrderDishes> dishes){
+        return ResponseEntity.ok(service.addDishes(dishes, orderId));
+    }
+
+    @GetMapping("/currentTableOrder/{tableName}")
+    public ResponseEntity<Order> getCurrentTableOrder(@PathVariable String tableName){
+        return ResponseEntity.ok(service.getCurrentTableOrder(tableName));
     }
 }

@@ -1,16 +1,26 @@
 package com.flawlesscoders.ambigu.modules.order;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.order.dto.OrderFeedbackDTO;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequest;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequestRepository;
+import com.flawlesscoders.ambigu.modules.table.Table;
+import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
+import com.flawlesscoders.ambigu.modules.table.TableRepository;
+import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
+import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
+import com.flawlesscoders.ambigu.modules.workplan.WorkplanService;
 
 import lombok.AllArgsConstructor;
 /**
@@ -21,6 +31,9 @@ import lombok.AllArgsConstructor;
 public class OrderService {
     private final OrderRepository repository;
     private final ModifyRequestRepository requestRepository;
+    private final TableRepository tableRepository;
+    private final WaiterRepository waiterRepository;
+    private final WorkplanService workplanService;
 
     /**
      * Retrieves all registered orders.
@@ -72,6 +85,9 @@ public class OrderService {
 
             repository.save(order);
 
+            Table table = tableRepository.findByTableIdentifier(order.getTable());
+            table.setTableClientStatus(TableClientStatus.OCCUPIED);
+            tableRepository.save(table);
             return order;
         }catch(Exception e){
             e.printStackTrace();
@@ -122,10 +138,13 @@ public class OrderService {
             if (deleteRequestFound != null){
                 Order found = repository.findById(deleteRequestFound.getOrderId()).orElse(null);
                 if (found != null){
+                    Table table = tableRepository.findByTableIdentifier(found.getTable());
                     found.setDeleted(true);
                     repository.save(found);
                     deleteRequestFound.setDeletedRequest(true);
                     requestRepository.save(deleteRequestFound);
+                    table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
+                    tableRepository.save(table);
                     return true;
                     
                 }else{
@@ -151,7 +170,10 @@ public class OrderService {
         try{
             Order found = repository.findById(id).orElse(null);
             if (found != null){
+                Table table = tableRepository.findByTableIdentifier(found.getTable());
                 found.setFinalized(true);
+                table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
+                tableRepository.save(table);
                 repository.save(found);
                 return found;
             }else{
@@ -198,15 +220,67 @@ public class OrderService {
      * Retrieves all current orders.
      * @return List of current orders.
      */
-    public List<Order> getCurrentOrders(){
-        return repository.getCurrentOrders();
+    public List<Order> getCurrentOrders(String waiterEmail){
+        List <Table> tables =workplanService.getTablesInChargeByWaiterInWorkplan(waiterEmail);
+        List <Order> orders = new ArrayList<>();
+        
+        for (Table table : tables) {
+            Order order = repository.getCurrentOrder(table.getTableIdentifier());
+            if (order != null) { // Verifica si la orden no es null
+                orders.add(order);
+            }
+        }
+        return orders != null ? orders : Collections.emptyList();
     }
 
     /**
      * Retrieves all finalized orders.
      * @return List of finalized orders.
      */
-    public List<Order> getFinalizedOrders(){
-        return repository.getFinalizedOrders();
+    public List<Order> getFinalizedOrders(String waiterEmail){
+        Waiter waiter = waiterRepository.findByEmail(waiterEmail).
+        orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
+        System.out.println(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
+        return repository.getFinalizedOrders(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
+    }
+
+     public Order addDishes(List<OrderDishes> dishes, String orderId) {
+        Order order = repository.findById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        float currentTotal = order.getTotal();
+        float totalNewDishes = 0;
+
+        if (order.getDishes() == null) {
+            order.setDishes(new ArrayList<>());
+        }
+    
+        try {
+            for (OrderDishes orderDishes : dishes) {
+                boolean dishExists = false; 
+                for (OrderDishes orderDishesOriginal : order.getDishes()) {
+                    if (orderDishes.getDishId().equals(orderDishesOriginal.getDishId())) {
+                        orderDishesOriginal.setQuantity(orderDishesOriginal.getQuantity() + orderDishes.getQuantity());
+                        dishExists = true; 
+                    }
+                }
+                if (!dishExists) {
+                    order.getDishes().add(orderDishes);
+                }
+                totalNewDishes += (orderDishes.getQuantity() * orderDishes.getUnitPrice());
+            }
+            order.setTotal(currentTotal + totalNewDishes);
+            return repository.save(order);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ocurrió un error fatal");
+        }
+    }
+
+    public Order getCurrentTableOrder(String tableName) {
+        Order order = repository.getCurrentOrder(tableName);
+        if (order != null) {
+            return repository.save(order);
+        } else {
+            return null;
+        }
     }
 }
