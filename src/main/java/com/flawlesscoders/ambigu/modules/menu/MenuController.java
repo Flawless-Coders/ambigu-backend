@@ -72,25 +72,25 @@ public class MenuController {
                 .body((Resource) gridFsResource);
     }
 
-    @Operation(summary = "Get dishes by menu, category and the status of the menu", description = "Returns a list of dishes belonging to a specific menu and category based on their menu status (enabled/disabled)")
+    @Operation(summary = "Get dishes by menu and category of a disable menu", description = "Returns a list of dishes belonging to a specific menu and category based on their menu status (enabled/disabled)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Dish list retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Menu or category not found")
     })
-    @GetMapping("/getDishesByCategory/{categoryId}")
-    public ResponseEntity<List<Dish>> getDishesByCategory(@PathVariable String categoryId) {
-        return ResponseEntity.ok(menuService.getDishesByCategory(categoryId));
-    }
+        @GetMapping("/getDishes/{menuId}/{categoryId}")
+        public ResponseEntity<List<Dish>> getDishesByMenu(@PathVariable String menuId, @PathVariable String categoryId){
+        return ResponseEntity.ok(menuService.getDishesByMenu(menuId, categoryId));
+        }
+    
+        @Operation(summary = "Get categories of the current menu.", description = "Returns a list of categories belonging to the current menu")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category list retrieved successfully")
+        })
+        @GetMapping("/category")
+        public ResponseEntity<List<Category>> getCategoriesByMenu(){
+            return ResponseEntity.ok(menuService.getCategoriesByMenu());
+        }
 
-    @Operation(summary = "Get categories by menu", description = "Returns a list of categories belonging to a specific menu")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Category list retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Menu not found")
-    })
-    @GetMapping("/category")
-    public ResponseEntity<List<Category>> getCategoriesByMenu() {
-        return ResponseEntity.ok(menuService.getCategoriesByMenu());
-    }
 
     @Operation(summary = "Save a new menu", description = "Creates a new menu in the database")
     @ApiResponses(value = {
@@ -186,4 +186,4 @@ public class MenuController {
         return ResponseEntity.ok().build();
     }
 
-}
+    }

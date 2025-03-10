@@ -30,13 +30,12 @@ public class ModifyRequest {
 
     private List<OrderDishes> modifiedDishes;
 
-    private float total;
-
     @NotNull(message = "El precio unitario no puede ser nulo")
     @Schema(description = "Unit price of the dish")
+    private float total;
     private String waiter;
-
+    private long orderNumber;
+    private String table;
     private boolean toDelete;
-
     private boolean deletedRequest;
 }

@@ -1,16 +1,24 @@
 package com.flawlesscoders.ambigu.modules.order;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.order.dto.OrderFeedbackDTO;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequest;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequestRepository;
+import com.flawlesscoders.ambigu.modules.table.Table;
+import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
+import com.flawlesscoders.ambigu.modules.table.TableRepository;
+import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
+import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
 
 import lombok.AllArgsConstructor;
 /**
@@ -21,6 +29,8 @@ import lombok.AllArgsConstructor;
 public class OrderService {
     private final OrderRepository repository;
     private final ModifyRequestRepository requestRepository;
+    private final TableRepository tableRepository;
+    private final WaiterRepository waiterRepository;
 
     /**
      * Retrieves all registered orders.
@@ -151,7 +161,10 @@ public class OrderService {
         try{
             Order found = repository.findById(id).orElse(null);
             if (found != null){
+                Table table = tableRepository.findByTableIdentifier(found.getTable());
                 found.setFinalized(true);
+                table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
+                tableRepository.save(table);
                 repository.save(found);
                 return found;
             }else{
@@ -198,15 +211,35 @@ public class OrderService {
      * Retrieves all current orders.
      * @return List of current orders.
      */
-    public List<Order> getCurrentOrders(){
-        return repository.getCurrentOrders();
+    public List<Order> getCurrentOrders(String waiterEmail){
+        Waiter waiter = waiterRepository.findByEmail(waiterEmail).
+        orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return repository.getCurrentOrders(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
     }
 
     /**
      * Retrieves all finalized orders.
      * @return List of finalized orders.
      */
-    public List<Order> getFinalizedOrders(){
-        return repository.getFinalizedOrders();
+    public List<Order> getFinalizedOrders(String waiterEmail){
+        Waiter waiter = waiterRepository.findByEmail(waiterEmail).
+        orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
+        System.out.println(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
+        return repository.getFinalizedOrders(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
+    }
+
+    public Order addDishes(List<OrderDishes> dishes, String orderId){
+        Order order = repository.findById(orderId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if(order.getDishes().isEmpty()){
+            order.setDishes(new ArrayList<>());
+        }
+
+        for (OrderDishes orderDishes : dishes) {
+            order.getDishes().add(orderDishes);
+        }
+
+        return repository.save(order);
     }
 }
+
+

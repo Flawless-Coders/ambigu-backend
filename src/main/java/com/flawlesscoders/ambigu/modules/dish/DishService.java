@@ -68,7 +68,6 @@ public class DishService {
         existingDish.setImage(updatedDish.getImage());
         existingDish.setCategory(updatedDish.getCategory());
         existingDish.setPrice(updatedDish.getPrice());
-        
         return dishRepository.save(existingDish);
     }
 
