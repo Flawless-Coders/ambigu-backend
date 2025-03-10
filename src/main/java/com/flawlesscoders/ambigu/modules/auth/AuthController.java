@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.flawlesscoders.ambigu.modules.auth.blacklistToken.BlacklistToken;
-import com.flawlesscoders.ambigu.modules.auth.blacklistToken.BlacklistTokenRepository;
+import com.flawlesscoders.ambigu.modules.auth.BlacklistToken.BlacklistToken;
+import com.flawlesscoders.ambigu.modules.auth.BlacklistToken.BlacklistTokenRepository;
 import com.flawlesscoders.ambigu.utils.security.JwtTokenProvider;
 
 import io.swagger.v3.oas.annotations.Operation;
