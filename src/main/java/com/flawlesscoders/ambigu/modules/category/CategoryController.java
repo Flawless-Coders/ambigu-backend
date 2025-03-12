@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -118,6 +119,27 @@ public class CategoryController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An error occurred while changing the category status.");
+        }
+    }
+
+    @Operation(summary = "Update category image", description = "Updates the image of a category using Base64 encoding")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Category image updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Category not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid image data")
+    })
+    @PatchMapping(value = "/image/{id}", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> updateCategoryImage(
+        @PathVariable String id,
+        @RequestPart("image") MultipartFile image
+    ) {
+        try {
+            categoryService.updateCategoryImage(id, image);
+            return ResponseEntity.ok("Image updated successfully.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
         }
     }
 }
