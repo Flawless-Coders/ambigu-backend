@@ -53,6 +53,10 @@ public abstract class User implements UserDetails {
     @NotNull(message = "El apellido materno es requerido")
     private String lastname_m;
 
+    @Schema(description = "User's phone number")
+    @NotNull(message = "El teléfono es requerido")
+    private String phone;
+
     @Schema(description = "User's Avatar")
     private String avatarBase64;
 

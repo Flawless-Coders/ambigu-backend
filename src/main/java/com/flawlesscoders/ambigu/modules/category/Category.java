@@ -24,9 +24,8 @@ public class Category {
     @Schema(description = "Name of the category.")
     private String name;
 
-    @NotBlank(message = "La imagen de la categoría es obligatoria.")
-    @Schema(description = "URL of the category image.")
-    private String image;
+    @Schema(description = "Base64 representation of the category image.", nullable = true)
+    private String imageBase64;
 
     @Schema(description = "Indicates whether a category is enabled or disabled.")
     private boolean status;

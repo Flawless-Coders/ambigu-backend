@@ -3,11 +3,12 @@ package com.flawlesscoders.ambigu.modules.dish;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-
+import java.io.IOException;
 import com.flawlesscoders.ambigu.modules.menu.Menu;
 import com.flawlesscoders.ambigu.modules.menu.MenuRepository;
-
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -65,7 +66,6 @@ public class DishService {
 
         existingDish.setName(updatedDish.getName());
         existingDish.setDescription(updatedDish.getDescription());
-        existingDish.setImage(updatedDish.getImage());
         existingDish.setCategory(updatedDish.getCategory());
         existingDish.setPrice(updatedDish.getPrice());
         return dishRepository.save(existingDish);
@@ -101,4 +101,20 @@ public class DishService {
         dish.setStatus(!dish.isStatus());
         dishRepository.save(dish);
     }
+
+    public void updateDishImage(String id, MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen no puede estar vacía.");
+        }
+
+        try {
+            Dish dish = getDishById(id);
+            String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+            dish.setImageBase64(base64Image);
+            dishRepository.save(dish);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al convertir la imagen a Base64.");
+        }
+    }
+
 }

@@ -10,7 +10,6 @@ import com.flawlesscoders.ambigu.modules.table.Table;
 import com.flawlesscoders.ambigu.modules.table.DTO.TableWithWaiterDTO;
 import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterWAvatarDTO;
 import com.flawlesscoders.ambigu.modules.workplan.DTO.AssignmentDTO;
-import com.flawlesscoders.ambigu.modules.workplan.DTO.HoursWaiterDTO;
 import com.flawlesscoders.ambigu.modules.workplan.objects.WaiterWorkplan;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -140,14 +139,18 @@ public class WorkplanController {
     public ResponseEntity<String> changeWaiterToTable(@PathVariable String workplanId, @PathVariable String tableId, @PathVariable String waiterId) {
         return ResponseEntity.ok(workplanService.changeWaiterToTable(workplanId, tableId, waiterId));
     }
+    @GetMapping("/{workplanId}/tables")
+    public ResponseEntity<List<Table>> getTablesByWorkplan(@PathVariable String workplanId) {
+        return ResponseEntity.ok(workplanService.getTablesByWorkplan(workplanId));
+    }
 
-    @Operation(summary = "Lista de mesas con meseros asignados en un plan activo", description = "Obtener la lista de mesas en un plan activo con su ultimo mesero asignado")
+    @Operation(summary = "Cambiar mesero de una mesa", description = "Permite reasignar el mesero de una mesa en un Workplan")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente"),
-        @ApiResponse(responseCode = "400", description = "Error al obtener la lista de mesas"),
-        @ApiResponse(responseCode = "404", description = "No hay mesas asignadas en un plan activo"),
-        @ApiResponse(responseCode = "500", description = "Error en el servidor")
+        @ApiResponse(responseCode = "200", description = "Mesero cambiado correctamente"),
+        @ApiResponse(responseCode = "400", description = "Error al cambiar el mesero"),
+        @ApiResponse(responseCode = "404", description = "Mesa no encontrada")
     })
+
     @GetMapping("/getEnabledTablesWithLastWaiter")
     public ResponseEntity<List<TableWithWaiterDTO>> getEnabledTablesWithLastWaiter(){
         return ResponseEntity.ok(workplanService.getEnabledTablesWithLastWaiter());
@@ -259,18 +262,8 @@ public class WorkplanController {
         @ApiResponse(responseCode = "500", description = "Error en el servidor")
     })
     @PutMapping("/{workplanId}/tables/{tableId}/waiters/{waiterId}/updateHours")
-    public ResponseEntity<WaiterWorkplan> updateWaiterWorkplanHours(
-        @PathVariable String workplanId,   // ID del plan de trabajo
-        @PathVariable String tableId,      // ID de la mesa
-        @PathVariable String waiterId,     // ID del mesero
-        @RequestBody HoursWaiterDTO request) { // Cuerpo con las nuevas horas
-        return ResponseEntity.ok(workplanService.updateWaiterWorkplanHours(
-            workplanId,
-            tableId,
-            waiterId,
-            request.getHoraInicio(),
-            request.getHoraFin()
-        ));
+    public ResponseEntity<WaiterWorkplan> updateWaiterHours(@PathVariable String workplanId, @PathVariable String tableId, @PathVariable String waiterId, @RequestBody WaiterWorkplan newHourWaiter){
+        return ResponseEntity.ok(workplanService.updateWaiterWorkplanHours(workplanId, tableId, waiterId, newHourWaiter));
     }
         
 }

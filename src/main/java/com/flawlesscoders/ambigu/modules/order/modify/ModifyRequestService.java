@@ -26,7 +26,7 @@ public class ModifyRequestService {
     }   
 
     public List<ModifyRequest> getPendingRequests(){
-        return requestRepository.findByDeletedRequest(false);
+        return requestRepository.findActiveModifyRequestsWithOrders();
     }  
 
     public ModifyRequest getById(String id){

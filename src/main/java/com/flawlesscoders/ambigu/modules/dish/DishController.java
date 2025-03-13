@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -113,6 +114,27 @@ public class DishController {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while changing the dish status.");
+        }
+    }
+
+    @Operation(summary = "Update dish image", description = "Updates the image of a dish using Base64 encoding")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Dish image updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Dish not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid image data")
+    })
+    @PatchMapping(value = "/image/{id}", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> updateDishImage(
+        @PathVariable String id,
+        @RequestPart("image") MultipartFile image
+    ) {
+        try {
+            dishService.updateDishImage(id, image);
+            return ResponseEntity.ok("Image updated successfully.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
         }
     }
 }
