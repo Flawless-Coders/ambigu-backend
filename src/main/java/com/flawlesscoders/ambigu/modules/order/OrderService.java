@@ -23,7 +23,6 @@ import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
 import com.flawlesscoders.ambigu.modules.workplan.WorkplanService;
 
 import lombok.AllArgsConstructor;
-
 /**
  * Service for managing orders in the system.
  */
@@ -38,40 +37,36 @@ public class OrderService {
 
     /**
      * Retrieves all registered orders.
-     * 
      * @return List of orders.
      */
-    public List<Order> getAllOrders() {
+    public List<Order> getAllOrders(){
         return repository.findAll();
     }
 
-    /**
+     /**
      * Searches for an order by its ID.
-     * 
      * @param id Order ID.
      * @return The found order.
      * @throws ResponseStatusException if the order does not exist.
      */
-    public Order getOrderById(String id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden"));
+    public Order getOrderById(String id){
+        return repository.findById(id).orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden"));
     }
 
     /**
      * Creates a new order.
-     * 
      * @param order Order to be created.
      * @return The created order.
      * @throws ResponseStatusException if the order cannot be created.
      */
-    public Order createOrder(Order order) {
+    public Order createOrder(Order order){
         float total = 0;
-        try {
-            for (int i = 0; i < order.getDishes().size(); i++) {
+        try{
+            for(int i = 0; i< order.getDishes().size(); i++){
                 total += order.getDishes().get(i).getUnitPrice() * order.getDishes().get(i).getQuantity();
             }
 
-            long orderNumber = repository.count() + 1;
+            long orderNumber = repository.count()+1; 
             order.setOrderNumber(orderNumber);
 
             DecimalFormat df = new DecimalFormat("#.##");
@@ -82,8 +77,9 @@ public class OrderService {
             order.setTotal(totalFormatted);
 
             order.setOpinion(new Opinion(
-                    0,
-                    "S/C"));
+                            0,
+                            "S/C"
+                        ));
 
             order.setDate(new Date());
 
@@ -92,11 +88,8 @@ public class OrderService {
             Table table = tableRepository.findByTableIdentifier(order.getTable());
             table.setTableClientStatus(TableClientStatus.OCCUPIED);
             tableRepository.save(table);
-            Table table = tableRepository.findByTableIdentifier(order.getTable());
-            table.setTableClientStatus(TableClientStatus.OCCUPIED);
-            tableRepository.save(table);
             return order;
-        } catch (Exception e) {
+        }catch(Exception e){
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
@@ -104,18 +97,16 @@ public class OrderService {
 
     /**
      * Updates an order with the information of a modification request.
-     * 
      * @param modifiedOrderId ID of the modification request.
      * @return The updated order.
-     * @throws ResponseStatusException if the order or the modification request do
-     *                                 not exist.
+     * @throws ResponseStatusException if the order or the modification request do not exist.
      */
-    public Order updateOrder(String modifiedOrderId) {
-        try {
+    public Order updateOrder(String modifiedOrderId){
+        try{
             ModifyRequest found = requestRepository.findById(modifiedOrderId).orElse(null);
-            if (found != null) {
+            if (found != null){
                 Order order = repository.findById(found.getOrderId()).orElse(null);
-                if (order != null) {
+                if (order != null){
                     order.setDishes(found.getModifiedDishes());
                     order.setTotal(found.getTotal());
                     order.setWaiter(found.getWaiter());
@@ -123,13 +114,13 @@ public class OrderService {
                     found.setDeletedRequest(true);
                     requestRepository.save(found);
                     return order;
-                } else {
+                }else{
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
                 }
-            } else {
+            }else{
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la solicitud de modificación");
             }
-        } catch (Exception e) {
+        }catch(Exception e){
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
@@ -137,18 +128,16 @@ public class OrderService {
 
     /**
      * Deletes an order with the information of a deletion request.
-     * 
      * @param id ID of the deletion request.
      * @return True if the order was deleted successfully.
-     * @throws ResponseStatusException if the order or the deletion request do not
-     *                                 exist.
+     * @throws ResponseStatusException if the order or the deletion request do not exist.
      */
-    public boolean deleteOrder(String id) {
-        try {
+    public boolean deleteOrder(String id){
+        try{
             ModifyRequest deleteRequestFound = requestRepository.findById(id).orElse(null);
-            if (deleteRequestFound != null) {
+            if (deleteRequestFound != null){
                 Order found = repository.findById(deleteRequestFound.getOrderId()).orElse(null);
-                if (found != null) {
+                if (found != null){
                     Table table = tableRepository.findByTableIdentifier(found.getTable());
                     found.setDeleted(true);
                     repository.save(found);
@@ -156,18 +145,16 @@ public class OrderService {
                     requestRepository.save(deleteRequestFound);
                     table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
                     tableRepository.save(table);
-                    table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
-                    tableRepository.save(table);
                     return true;
-
-                } else {
+                    
+                }else{
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
                 }
-            } else {
+            }else{
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la solicitud de eliminación");
             }
 
-        } catch (Exception e) {
+        }catch(Exception e){
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
@@ -175,25 +162,24 @@ public class OrderService {
 
     /**
      * Finalizes an order.
-     * 
      * @param id Order ID.
      * @return The finalized order.
      * @throws ResponseStatusException if the order does not exist.
      */
-    public Order finalizeOrder(String id) {
-        try {
+    public Order finalizeOrder(String id){
+        try{
             Order found = repository.findById(id).orElse(null);
-            if (found != null) {
+            if (found != null){
                 Table table = tableRepository.findByTableIdentifier(found.getTable());
                 found.setFinalized(true);
                 table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
                 tableRepository.save(table);
                 repository.save(found);
                 return found;
-            } else {
+            }else{
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
             }
-        } catch (Exception e) {
+        }catch(Exception e){
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
@@ -201,40 +187,37 @@ public class OrderService {
 
     /**
      * Rates and comments an order.
-     * 
-     * @param id               Order ID.
+     * @param id Order ID.
      * @param orderFeedbackDTO Qualification and comment.
      * @return The rated and commented order.
-     * @throws ResponseStatusException if the order does not exist, the
-     *                                 qualification is less than 1 or the comment
-     *                                 is empty.
+     * @throws ResponseStatusException if the order does not exist, the qualification is less than 1 or the comment is empty.
      */
-    public Order rateAndCommentOrder(String id, OrderFeedbackDTO orderFeedbackDTO) {
-        if (!(orderFeedbackDTO.getQualification() < 1)) {
-            if (!(orderFeedbackDTO.getComment().isEmpty()) || !(orderFeedbackDTO.getComment().isBlank())) {
+    public Order rateAndCommentOrder(String id, OrderFeedbackDTO orderFeedbackDTO){
+        if (!(orderFeedbackDTO.getQualification() < 1)){            
+            if (!(orderFeedbackDTO.getComment().isEmpty()) || !(orderFeedbackDTO.getComment().isBlank())){                
                 Order found = repository.findById(id).orElse(null);
-                if (found != null) {
+                if (found != null){
                     Opinion opinion = new Opinion(
-                            orderFeedbackDTO.getQualification(),
-                            orderFeedbackDTO.getComment());
+                        orderFeedbackDTO.getQualification(),
+                        orderFeedbackDTO.getComment()
+                    );
                     found.setOpinion(opinion);
                     repository.save(found);
                     return found;
-                } else {
+                }else{
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
                 }
-            } else {
+            }else{
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El comentario no puede estar vacío");
             }
-        } else {
+        }else{
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La calificación no puede ser menor a 1");
         }
 
     }
-
+    
     /**
      * Retrieves all current orders.
-     * 
      * @return List of current orders.
      */
     public List<Order> getCurrentOrders(String waiterEmail){
@@ -250,34 +233,23 @@ public class OrderService {
         return orders != null ? orders : Collections.emptyList();
     }
 
-    /**
-     * Retrieves all finalized orders.
-     * 
-     * @return List of finalized orders.
-     */
     public List<Order> getFinalizedOrders(String waiterEmail) {
-        Waiter waiter = waiterRepository.findByEmail(waiterEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        System.out.println(waiter.getName() + " " + waiter.getLastname_p() + " " + waiter.getLastname_m());
-        return repository
-                .getFinalizedOrders(waiter.getName() + " " + waiter.getLastname_p() + " " + waiter.getLastname_m());
+        // Obtener las mesas asignadas al mesero
+        List<Table> tables = workplanService.getTablesInChargeByWaiterInWorkplan(waiterEmail);
+        List<Order> orders = new ArrayList<>();
+    
+        // Recorrer las mesas y obtener las órdenes finalizadas de cada una
+        for (Table table : tables) {
+            List<Order> tableOrders = repository.getFinalizedOrders(table.getTableIdentifier());
+            if (tableOrders != null && !tableOrders.isEmpty()) { // Verifica si la lista de órdenes no es null ni está vacía
+                orders.addAll(tableOrders); // Agrega todas las órdenes de la mesa a la lista principal
+            }
+        }
+    
+        // Retorna la lista de órdenes, o una lista vacía si no hay órdenes
+        return !orders.isEmpty() ? orders : Collections.emptyList();
     }
 
-    /*
-     * public Order addDishes(List<OrderDishes> dishes, String orderId) {
-     * Order order = repository.findById(orderId).orElseThrow(() -> new
-     * ResponseStatusException(HttpStatus.NOT_FOUND));
-     * if (order.getDishes().isEmpty()) {
-     * order.setDishes(new ArrayList<>());
-     * }
-     * 
-     * for (OrderDishes orderDishes : dishes) {
-     * order.getDishes().add(orderDishes);
-     * }
-     * 
-     * return repository.save(order);
-     * }
-     */
 
      public Order addDishes(List<OrderDishes> dishes, String orderId) {
         Order order = repository.findById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -286,36 +258,6 @@ public class OrderService {
 
         if (order.getDishes() == null) {
             order.setDishes(new ArrayList<>());
-        }
-    
-        try {
-            for (OrderDishes orderDishes : dishes) {
-                boolean dishExists = false; 
-                for (OrderDishes orderDishesOriginal : order.getDishes()) {
-                    if (orderDishes.getDishId().equals(orderDishesOriginal.getDishId())) {
-                        orderDishesOriginal.setQuantity(orderDishesOriginal.getQuantity() + orderDishes.getQuantity());
-                        dishExists = true; 
-                    }
-                }
-                if (!dishExists) {
-                    order.getDishes().add(orderDishes);
-                }
-                totalNewDishes += (orderDishes.getQuantity() * orderDishes.getUnitPrice());
-            }
-            order.setTotal(currentTotal + totalNewDishes);
-            return repository.save(order);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ocurrió un error fatal");
-        }
-    }
-
-    public Order getCurrentTableOrder(String tableName) {
-        Order order = repository.getCurrentOrder(tableName);
-        if (order != null) {
-            return repository.save(order);
-        } else {
-            return null;
         }
     
         try {
