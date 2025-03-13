@@ -11,8 +11,9 @@ public interface OrderRepository extends MongoRepository<Order, String>{
     @Query("{ 'finalized': false, 'table': ?0, 'deleted':false}")
     Order getCurrentOrder(String tableIdentifier);
 
-    @Query("{ 'finalized': true, 'waiter':?0  }")
-    List<Order> getFinalizedOrders(String waiterName);
+    //Método que trae todas las mesas
+    @Query("{ 'finalized': true, 'table': ?0, 'deleted':false}")
+    List<Order> getFinalizedOrders(String tableIdentifier);
 
     @Query("{'table': ?tableId}")
     List<Order> getOrdersByTable(String tableId);

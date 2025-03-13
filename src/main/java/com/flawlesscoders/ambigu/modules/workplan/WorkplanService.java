@@ -16,6 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.flawlesscoders.ambigu.modules.order.Order;
+import com.flawlesscoders.ambigu.modules.order.OrderRepository;
+import com.flawlesscoders.ambigu.modules.order.OrderService;
 import com.flawlesscoders.ambigu.modules.table.Table;
 import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
 import com.flawlesscoders.ambigu.modules.table.TableRepository;
@@ -44,6 +47,7 @@ public class WorkplanService {
     private final WaiterRepository waiterRepository;
     private final DisabledTableHistoryRepository disabledTableHistoryRepository;
     private final WaiterService waiterService;
+    private final OrderRepository orderRepository;
 
     //method to initialize a workplan
      public Workplan initializeWorkplan(String workplanName) {
@@ -360,6 +364,12 @@ public class WorkplanService {
                 // Marcar la mesa como disponible
                 foundTable.setTableWaiter(false);
                 tableRepository.save(foundTable); // Guardar el cambio en la mesa
+            }
+
+            List<Order> orders= orderRepository.findAll();
+
+            for (Order order : orders) {
+                order.setFinalized(true);
             }
     
             // Marcar el Workplan como inactivo
@@ -800,6 +810,36 @@ public class WorkplanService {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al actualizar la hora del mesero");
+        }
+    }
+
+    public List<Table> getTablesInChargeByWaiter(String waiterEmail) {
+        try {
+            // Buscar al mesero por email
+            Waiter waiter = waiterRepository.findByEmail(waiterEmail)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+    
+            String waiterId = waiter.getId(); // Obtenemos el ID del mesero
+    
+            // Buscar el Workplan activo
+            Workplan workplan = workplanRepository.findByIsPresent(true)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un plan de trabajo activo"));
+    
+            // Filtrar las mesas donde el `waiterId` está asignado en algún WaiterWorkplan
+            List<Table> tables = workplan.getAssigment().stream()
+                    .filter(assignment -> {
+                        // Verificar si el mesero está asignado a esta mesa
+                        return assignment.getWaiterWorkplan().stream()
+                                .anyMatch(waiterWorkplan -> waiterWorkplan.getWaiter().equals(waiterId));
+                    })
+                    .map(assignment -> tableRepository.findById(assignment.getTable())
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada")))
+                    .collect(Collectors.toList());
+    
+            return tables;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas asignadas al mesero en el plan de trabajo");
         }
     }
 }

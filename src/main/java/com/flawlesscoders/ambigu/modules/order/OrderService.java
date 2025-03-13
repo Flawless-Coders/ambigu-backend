@@ -233,16 +233,23 @@ public class OrderService {
         return orders != null ? orders : Collections.emptyList();
     }
 
-    /**
-     * Retrieves all finalized orders.
-     * @return List of finalized orders.
-     */
-    public List<Order> getFinalizedOrders(String waiterEmail){
-        Waiter waiter = waiterRepository.findByEmail(waiterEmail).
-        orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
-        System.out.println(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
-        return repository.getFinalizedOrders(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
+    public List<Order> getFinalizedOrders(String waiterEmail) {
+        // Obtener las mesas asignadas al mesero
+        List<Table> tables = workplanService.getTablesInChargeByWaiterInWorkplan(waiterEmail);
+        List<Order> orders = new ArrayList<>();
+    
+        // Recorrer las mesas y obtener las órdenes finalizadas de cada una
+        for (Table table : tables) {
+            List<Order> tableOrders = repository.getFinalizedOrders(table.getTableIdentifier());
+            if (tableOrders != null && !tableOrders.isEmpty()) { // Verifica si la lista de órdenes no es null ni está vacía
+                orders.addAll(tableOrders); // Agrega todas las órdenes de la mesa a la lista principal
+            }
+        }
+    
+        // Retorna la lista de órdenes, o una lista vacía si no hay órdenes
+        return !orders.isEmpty() ? orders : Collections.emptyList();
     }
+
 
      public Order addDishes(List<OrderDishes> dishes, String orderId) {
         Order order = repository.findById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
