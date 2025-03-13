@@ -326,7 +326,8 @@ public class WorkplanService {
                                     waiter.getLastname_p(),
                                     table.isTableWaiter(),
                                     table.isEnabled(),
-                                    workplan.getId()
+                                    workplan.getId(),
+                                    table.getTableClientStatus()
                             );
                         } else {
                             // No hay mesero activo en este momento
@@ -337,7 +338,8 @@ public class WorkplanService {
                                     "",
                                     table.isTableWaiter(),
                                     table.isEnabled(),
-                                    workplan.getId()
+                                    workplan.getId(),
+                                    table.getTableClientStatus()
                             );
                         }
                     }
