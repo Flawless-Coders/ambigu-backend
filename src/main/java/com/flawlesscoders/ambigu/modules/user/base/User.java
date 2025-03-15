@@ -38,7 +38,6 @@ public abstract class User implements UserDetails {
     private String password;
 
     @Schema(description = "User's role")
-    @NotNull(message = "El rol es requerido")
     private Role role;
 
     @Schema(description = "User's name")

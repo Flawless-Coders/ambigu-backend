@@ -14,7 +14,7 @@ public class GetWaiterWAvatarDTO {
     private String lastname_m;
     private String email;
     private String avatarBase64;
+    private String phone;
     private boolean isLeader;
-    private Shift shift;
     private int AvgRating;
 }
