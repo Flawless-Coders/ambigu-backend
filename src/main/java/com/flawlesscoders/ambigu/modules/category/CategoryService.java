@@ -3,11 +3,12 @@ package com.flawlesscoders.ambigu.modules.category;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-
+import java.io.IOException;
 import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.dish.DishRepository;
-
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -61,8 +62,6 @@ public class CategoryService {
         Category existingCategory = getCategoryById(id);
 
         existingCategory.setName(updatedCategory.getName());
-        existingCategory.setImage(updatedCategory.getImage());
-
         return categoryRepository.save(existingCategory);
     }
 
@@ -87,6 +86,21 @@ public class CategoryService {
         categoryRepository.save(category);
     }
 
+    public void updateCategoryImage(String id, MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen no puede estar vacía.");
+        }
+
+        try {
+            Category category = getCategoryById(id);
+            String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+            category.setImageBase64(base64Image);
+            categoryRepository.save(category);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al convertir la imagen a Base64.");
+        }
+    }
+
     /**
      * Toggles the status of a category between active and inactive.
      * @param id The ID of the category.
@@ -96,4 +110,5 @@ public class CategoryService {
         category.setStatus(!category.isStatus());
         categoryRepository.save(category);
     }
+    
 }
