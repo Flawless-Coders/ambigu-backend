@@ -99,7 +99,7 @@ public class WaiterController {
         @ApiResponse(responseCode = "400", description = "Invalid waiter"),
         @ApiResponse(responseCode = "404", description = "Waiter not found"),
     })
-    @PutMapping("/update")
+    @PutMapping()
     public ResponseEntity<Void> updateWaiter(
         @RequestBody 
         @io.swagger.v3.oas.annotations.parameters.RequestBody(

@@ -105,8 +105,9 @@ public class WaiterService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
 
         existingWaiter.setName(waiter.getName());
-        existingWaiter.setLastname_p(waiter.getEmail());
-        existingWaiter.setLastname_m(waiter.getPassword());
+        existingWaiter.setLastname_p(waiter.getLastname_p());
+        existingWaiter.setLastname_m(waiter.getLastname_m());
+        existingWaiter.setPhone(waiter.getPhone());
         existingWaiter.setEmail(waiter.getEmail());
         
         waiterRepository.save(existingWaiter);
