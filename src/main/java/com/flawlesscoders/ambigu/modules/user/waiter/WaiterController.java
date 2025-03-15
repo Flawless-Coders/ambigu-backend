@@ -136,7 +136,7 @@ public class WaiterController {
         @ApiResponse(responseCode = "200", description = "Status changed"),
         @ApiResponse(responseCode = "404", description = "Waiter not found"),
     })
-    @PutMapping("/status/{id}")
+    @PatchMapping("/status/{id}")
     public ResponseEntity<Void> changeWaiterStatus(
         @Parameter(description = "Waiter's id", required = true)
         @PathVariable String id ) {

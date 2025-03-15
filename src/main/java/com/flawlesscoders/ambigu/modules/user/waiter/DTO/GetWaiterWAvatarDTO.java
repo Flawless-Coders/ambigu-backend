@@ -1,7 +1,5 @@
 package com.flawlesscoders.ambigu.modules.user.waiter.DTO;
 
-import com.flawlesscoders.ambigu.modules.user.waiter.Shift;
-
 import lombok.Builder;
 import lombok.Data;
 

@@ -26,7 +26,7 @@ public class AuthService {
 
     public String login(AuthRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            .orElseThrow(() -> new BadCredentialsException("Usuario no encontrado"));
 
         // Comparar la contraseña ingresada con la almacenada (BCrypt)
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {

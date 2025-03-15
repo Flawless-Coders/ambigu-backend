@@ -15,6 +15,6 @@ public class GetWaiterDTO {
     private String email;
     private String phone;
     private boolean isLeader;
-    private Shift shift;
+    private boolean status;
     private int AvgRating;
 }

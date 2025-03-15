@@ -34,6 +34,7 @@ public class WaiterService {
             .email(waiter.getEmail())
             .phone(waiter.getPhone())
             .isLeader(waiter.isLeader())
+            .status(waiter.isStatus())
             .AvgRating(waiter.getAvgRating())
             .build();
     }
@@ -135,8 +136,14 @@ public class WaiterService {
         Waiter existingWaiter = waiterRepository.findById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
 
-        existingWaiter.setStatus(!existingWaiter.isStatus());
-        return ResponseEntity.ok().build();
+        try{
+            existingWaiter.setStatus(!existingWaiter.isStatus());
+            waiterRepository.save(existingWaiter);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al cambiar el estado del mesero");
+        }
+
     }
     
     public ResponseEntity<List<GetWaiterWAvatarDTO>> getWaitersWAvatar() {
