@@ -1,5 +1,7 @@
 package com.flawlesscoders.ambigu.modules.table.DTO;
 
+import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,4 +15,5 @@ public class TableWithWaiterDTO {
     private boolean tableWaiter;
     private boolean isEnabled;
     private String workplanId;
+    private TableClientStatus tableClientStatus;
 }
