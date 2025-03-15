@@ -487,7 +487,6 @@ public class WorkplanService {
                                 .waiterId(waiter.getId())
                                 .name(waiter.getName())
                                 .lastname_p(waiter.getLastname_p())
-                                .shift(waiter.getShift())
                                 .horaInicio(horaInicio)
                                 .horaFin(horaFin)
                                 .build();
