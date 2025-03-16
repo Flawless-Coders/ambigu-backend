@@ -136,6 +136,10 @@ public class WaiterService {
         Waiter existingWaiter = waiterRepository.findById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
 
+        if(existingWaiter.isLeader()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se puede cambiar el estado de un lider");
+        }
+
         try{
             existingWaiter.setStatus(!existingWaiter.isStatus());
             waiterRepository.save(existingWaiter);
@@ -149,5 +153,27 @@ public class WaiterService {
     public ResponseEntity<List<GetWaiterWAvatarDTO>> getWaitersWAvatar() {
         List<Waiter> waiters = waiterRepository.findAllByStatusTrueAndLeaderFalse();
         return ResponseEntity.ok(waiters.stream().map(this::toGetWaiterWAvatarDTO).toList());
+    }
+
+    public ResponseEntity<Void> changeLeaderStatus(String id) {
+        Waiter existingWaiter = waiterRepository.findById(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+
+        if(existingWaiter.isLeader()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El mesero ya es líder");
+        }
+
+        try{
+            Waiter currentLeader = waiterRepository.findLeader()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un líder activo"));
+            currentLeader.setLeader(false);
+            waiterRepository.save(currentLeader);
+            existingWaiter.setLeader(true);
+            waiterRepository.save(existingWaiter);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            System.out.println(e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al cambiar el estado de lider del mesero");
+        }
     }
 }
