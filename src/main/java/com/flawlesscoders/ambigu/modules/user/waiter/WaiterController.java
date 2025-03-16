@@ -152,5 +152,18 @@ public class WaiterController {
     public ResponseEntity<List<GetWaiterWAvatarDTO>> getWaitersWAvatar(){
         return waiterService.getWaitersWAvatar();
     }
+
+    //CHANGE LEADER STATUS OF A WAITER
+    @Operation(summary = "Changes the leader status of a waiter")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Leader status changed"),
+        @ApiResponse(responseCode = "404", description = "Waiter not found"),
+    })
+    @PatchMapping("/leader/{id}")
+    public ResponseEntity<Void> changeWaiterLeaderStatus(
+        @Parameter(description = "Waiter's id", required = true)
+        @PathVariable String id ) {
+        return waiterService.changeLeaderStatus(id);
+    }
     
 }
