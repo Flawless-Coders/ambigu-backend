@@ -1,14 +1,15 @@
 package com.flawlesscoders.ambigu.modules.theming;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import io.micrometer.core.ipc.http.HttpSender.Response;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -74,11 +75,23 @@ public class ThemingService {
         return ResponseEntity.ok(logos);
     }
 
-    public ResponseEntity<Void> updateLogos(Theming theming) {
+    public ResponseEntity<Void> updateLogos(MultipartFile logo, MultipartFile logoSmall) {
         try{
             Theming existingTheme = themingRepository.find();
-            existingTheme.setLogo(theming.getLogo());
-            existingTheme.setLogoSmall(theming.getLogoSmall());
+            String contentTypeLogo = logo.getContentType(); 
+            String contentTypeLogoSmall = logoSmall.getContentType();
+            if(contentTypeLogo == null || !contentTypeLogo.startsWith("image/")){
+                return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
+            }
+
+            if(contentTypeLogoSmall == null || !contentTypeLogoSmall.startsWith("image/")){
+                return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
+            }
+
+            String base64ImageLogo = "data:" + contentTypeLogo + ";base64," + Base64.getEncoder().encodeToString(logo.getBytes());
+            String base64ImageLogoSmall = "data:" + contentTypeLogoSmall + ";base64," + Base64.getEncoder().encodeToString(logoSmall.getBytes());
+            existingTheme.setLogo(base64ImageLogo);
+            existingTheme.setLogoSmall(base64ImageLogoSmall);
             themingRepository.save(existingTheme);
             return ResponseEntity.ok().build();
         } catch (Exception e) {

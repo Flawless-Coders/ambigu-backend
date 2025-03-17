@@ -4,8 +4,9 @@ import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +31,12 @@ public class ThemingController {
         return themingService.getColors();
     }
 
+    //UPDATE COLORS
+    @PatchMapping("/colors")
+    public ResponseEntity<Void> updateColors(@RequestBody Theming theming) {
+        return themingService.updateColors(theming);
+    }
+
     //GET FONTS
     @GetMapping("/fonts")
     public ResponseEntity<Map<String,String>> getFonts() {
@@ -49,7 +56,8 @@ public class ThemingController {
         return themingService.getLogos();
     }
 
-
-
-    
+    @PatchMapping(value = "/logos", consumes = {"multipart/form-data"} )
+    public ResponseEntity<Void> updateLogos(@RequestPart("logo") MultipartFile logo, @RequestPart("logoSmall") MultipartFile logoSmall) {
+        return themingService.updateLogos(logo, logoSmall);
+    }
 }
