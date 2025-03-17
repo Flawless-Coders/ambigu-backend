@@ -1,0 +1,55 @@
+package com.flawlesscoders.ambigu.modules.theming;
+
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/theming")
+@RequiredArgsConstructor
+public class ThemingController {
+    private final ThemingService themingService;
+
+    //GET THEMING
+    @GetMapping
+    public ResponseEntity<Theming> getTheming() {
+        return themingService.getTheming();
+    }
+
+    //GET COLORS
+    @GetMapping("/colors")
+    public ResponseEntity<Map<String,String>> getColors() {
+        return themingService.getColors();
+    }
+
+    //GET FONTS
+    @GetMapping("/fonts")
+    public ResponseEntity<Map<String,String>> getFonts() {
+        return themingService.getFonts();
+    }
+
+    //UPDATE FONTS
+    @PatchMapping("/fonts")
+    public ResponseEntity<Void> updateFonts(@RequestBody Theming theming) {
+        System.out.println(theming);
+        return themingService.updateFonts(theming);
+    }
+
+    //GET LOGOS
+    @GetMapping("/logos")
+    public ResponseEntity<Map<String,String>> getLogos() {
+        return themingService.getLogos();
+    }
+
+
+
+    
+}
