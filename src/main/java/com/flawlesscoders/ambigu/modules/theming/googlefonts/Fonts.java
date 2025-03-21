@@ -13,5 +13,6 @@ public class Fonts {
     @Id
     private String id = "google_fonts";
     private List<String> fonts;
+    private int totalFonts;
     
 }
