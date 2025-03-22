@@ -66,7 +66,7 @@ public class OrderController {
         @ApiResponse(responseCode = "404", description = "Order not found")
     })
     @PutMapping("/finalize/{id}")
-    public ResponseEntity<Order> finalizeOrder(@PathVariable String id){
+    public ResponseEntity<String> finalizeOrder(@PathVariable String id){
         return ResponseEntity.ok(service.finalizeOrder(id));
     }
 

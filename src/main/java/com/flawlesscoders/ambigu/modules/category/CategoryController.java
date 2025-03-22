@@ -47,22 +47,25 @@ public class CategoryController {
     }
 
     @Operation(summary = "Save a new category", description = "Creates a new category in the database.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Category created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid data"),
-            @ApiResponse(responseCode = "500", description = "Server error")
-    })
-    @PostMapping
-    public ResponseEntity<?> saveCategory(@RequestBody Category category) {
-        try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.saveCategory(category));
-        } catch (ResponseStatusException e) {
-            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred while saving the category.");
-        }
+@ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Category created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid data"),
+        @ApiResponse(responseCode = "500", description = "Server error")
+})
+@PostMapping(consumes = {"multipart/form-data"})
+public ResponseEntity<?> saveCategory(
+        @RequestParam("name") String name,
+        @RequestPart(value = "image", required = false) MultipartFile image
+) {
+    try {
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.saveCategory(name, image));
+    } catch (ResponseStatusException e) {
+        return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("An error occurred while saving the category.");
     }
+}
 
     @Operation(summary = "Update a category", description = "Updates an existing category's data.")
     @ApiResponses(value = {

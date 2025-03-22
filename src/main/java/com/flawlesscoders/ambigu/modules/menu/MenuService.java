@@ -42,7 +42,8 @@ public class MenuService {
      * @return A list of categories for the current menu.
      */
     public List<Category> getCategoriesByMenu() {
-        Menu menu = menuRepository.getCurrentMenu();
+        Menu menu = menuRepository.getCurrentMenu()
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
 
         if (menu.getCategories() == null) {
             menu.setCategories(new ArrayList<>());
@@ -58,7 +59,7 @@ public class MenuService {
      * @return A list of categories for the disabled menu.
      * @throws ResponseStatusException If the menu is not found.
      */
-    public List<Category> getCategoriesByDisableMenu(String menuId) {
+    public List<Category> getCategoriesByMenu(String menuId) {
         Menu menu = menuRepository.findById(menuId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu not found"));
         if (menu.getCategories() == null) {
@@ -88,7 +89,7 @@ public class MenuService {
         List<Dish> activeDish = new ArrayList<>();
 
         for (Dish dish : dishes) {
-            if (dish.isStatus() && dish.getCategory().equals(categoryId) && !menu.isStatus()) {
+            if (dish.isStatus() && dish.getCategory().equals(categoryId)) {
                 activeDish.add(dish);
             }
         }
@@ -102,7 +103,8 @@ public class MenuService {
      * @return A list of dishes in the specified category.
      */
     public List<Dish> getDishesByCategory(String categoryId) {
-        Menu menu = menuRepository.getCurrentMenu();
+         Menu menu = menuRepository.getCurrentMenu()
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
 
         if (menu.getDishes() == null || menu.getDishes().isEmpty()) {
             return new ArrayList<>();
@@ -128,12 +130,12 @@ public class MenuService {
      */
     public Menu save(Menu menu) {
         if (menu.getName() == null || menu.getName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name cannot be empty");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre no puede estar vacío");
         }
         if (menu.getDescription() == null || menu.getDescription().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Description cannot be empty");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La descripción no puede estar vacía");
         }
-        menu.setStatus(true);
+        menu.setStatus(false);
         return menuRepository.save(menu);
     }
 
@@ -145,18 +147,19 @@ public class MenuService {
      * @param description The new description of the menu.
      * @param photoId     The ID of the new photo (optional).
      * @return The updated menu.
-     * @throws ResponseStatusException If the menu is not found or the data is invalid.
+     * @throws ResponseStatusException If the menu is not found or the data is
+     *                                 invalid.
      */
     public Menu update(String id, String name, String description, String photoId) {
         Menu existingMenu = menuRepository
                 .findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
 
         if (name == null || name.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name cannot be empty");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del menú no puede estar vacío");
         }
         if (description == null || description.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Description cannot be empty");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La descripción no puede estar vacía");
         }
 
         if (photoId != null) {
@@ -170,16 +173,22 @@ public class MenuService {
     }
 
     /**
-     * Changes the status of a menu between active and inactive.
+     * Assigns as a current menu
      * 
      * @param id The ID of the menu.
      * @throws ResponseStatusException If the menu is not found.
      */
-    public void changeStatus(String id) {
-        Menu menu = menuRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu not found"));
-        menu.setStatus(!menu.isStatus());
-        menuRepository.save(menu);
+    public boolean assingAsCurrent(String id) {
+        Menu currentMenu = menuRepository.getCurrentMenu()
+        .orElse(null);
+        if (currentMenu == null) {
+            Menu menu = menuRepository.findById(id)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
+            menu.setStatus(true);
+            menuRepository.save(menu);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -219,7 +228,8 @@ public class MenuService {
     }
 
     /**
-     * Removes a dish from a menu. If the dish was the only one in its category, the category is also removed.
+     * Removes a dish from a menu. If the dish was the only one in its category, the
+     * category is also removed.
      * 
      * @param dishId The ID of the dish.
      * @param menuId The ID of the menu.
@@ -263,7 +273,28 @@ public class MenuService {
      * @param status The status of the menu.
      * @return A list of menus with the specified status.
      */
-    public List<Menu> getByStatus(boolean status) {
-        return menuRepository.findByStatus(status);
+    public List<Menu> findAll() {
+        return menuRepository.findAllOrderByStatusDesc();
     }
+
+        /**
+     * Assigns as a current menu
+     * 
+     * @param id The ID of the menu.
+     * @throws ResponseStatusException If the menu is not found.
+     */
+    public boolean inactivateMenu(String id) {
+            Menu menu = menuRepository.findById(id)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu no encontrado"));
+            menu.setStatus(false);
+            menuRepository.save(menu);
+            return true;
+    }
+
+
+    public boolean isCurrentMenu(){
+        Menu currentMenu = menuRepository.getCurrentMenu().orElse(null);
+        return currentMenu != null;
+    }
+
 }
