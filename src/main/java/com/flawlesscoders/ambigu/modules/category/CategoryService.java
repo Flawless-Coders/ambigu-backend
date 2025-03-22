@@ -43,11 +43,25 @@ public class CategoryService {
      * @return The saved category.
      * @throws ResponseStatusException if the data is invalid.
      */
-    public Category saveCategory(Category category) {
-        if (category.getName() == null || category.getName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The category name cannot be empty.");
+    public Category saveCategory(String name, MultipartFile image) {
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la categoría no puede estar vacío.");
         }
-        category.setStatus(true); // The category is always created as active
+    
+        // Crear una nueva categoría
+        Category category = new Category();
+        category.setName(name);
+        category.setStatus(true);
+    
+        if (image != null && !image.isEmpty()) {
+            try {
+                String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+                category.setImageBase64(base64Image);
+            } catch (IOException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al procesar la imagen.");
+            }
+        }
+    
         return categoryRepository.save(category);
     }
 

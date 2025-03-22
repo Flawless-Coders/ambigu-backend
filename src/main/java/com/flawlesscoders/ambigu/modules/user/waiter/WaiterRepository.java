@@ -31,4 +31,13 @@ public interface WaiterRepository extends MongoRepository<Waiter, String> {
      */
     @Query("{ 'status': true, 'isLeader': false }")
     List<Waiter> findAllByStatusTrueAndLeaderFalse();
+
+    /**
+     * Obtains the leader
+     * @return Leader waiter
+     */
+    @Query("{ 'status': true, 'isLeader': true }")
+    Optional<Waiter> findLeader();
+
+
 }
