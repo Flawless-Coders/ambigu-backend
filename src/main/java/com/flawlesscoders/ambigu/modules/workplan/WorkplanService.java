@@ -385,6 +385,7 @@ public class WorkplanService {
     
                 // Marcar la mesa como disponible
                 foundTable.setTableWaiter(false);
+                foundTable.setTableClientStatus(TableClientStatus.UNOCCUPIED);
                 tableRepository.save(foundTable); // Guardar el cambio en la mesa
             }
 
@@ -392,8 +393,9 @@ public class WorkplanService {
 
             for (Order order : orders) {
                 order.setFinalized(true);
+                orderRepository.save(order);
             }
-    
+
             // Marcar el Workplan como inactivo
             workplan.setPresent(false);
             workplanRepository.save(workplan);

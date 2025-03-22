@@ -79,6 +79,7 @@ public class ModifyRequestService {
                     .total(found.getTotal())
                     .waiter(found.getWaiter())
                     .table((found.getTable()))
+                    .tableName(found.getTableName())
                     .orderNumber((found.getOrderNumber()))
                     .deletedRequest(false)
                     .build();
