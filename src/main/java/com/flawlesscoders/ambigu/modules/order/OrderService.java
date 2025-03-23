@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -181,7 +182,7 @@ public class OrderService {
                 table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
                 tableRepository.save(table);
                 repository.save(found);
-                return "http://192.168.0.17/prueba/" + found.getOrderNumber();
+                return "http://192.168.0.9/prueba/" + found.getOrderNumber();
             }else{
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
             }
@@ -294,6 +295,20 @@ public class OrderService {
             return repository.save(order);
         } else {
             return null;
+        }
+    }
+
+    public Order findByOrderNumber(long numberOrder){
+        Order order = repository.findByOrderNumber(numberOrder);
+        try {
+            if(order != null){
+                return order;
+            }else{
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error interno");
         }
     }
 }

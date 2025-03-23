@@ -18,4 +18,7 @@ public interface OrderRepository extends MongoRepository<Order, String>{
     @Query("{'table': ?tableId}")
     List<Order> getOrdersByTable(String tableId);
 
+    @Query("{'orderNumber': ?0}")
+    Order findByOrderNumber(long orderNumber);
+
 }
