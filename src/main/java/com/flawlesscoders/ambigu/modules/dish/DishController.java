@@ -4,11 +4,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+
 
 @RestController
 @AllArgsConstructor
@@ -137,4 +141,16 @@ public class DishController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
         }
     }
+
+    //mis cambios
+    @GetMapping("/available/{id}")
+    public ResponseEntity<List<Dish>>getAvailableDishesByCategory(@PathVariable String id) {
+        return ResponseEntity.ok(dishService.getAvailableDishesByCategory(id));
+    }
+    //mis cambios
+    @GetMapping("/unavailable/{id}")
+    public ResponseEntity<List<Dish>>getUnavailableDishesByCategory(@PathVariable String id) {
+        return ResponseEntity.ok(dishService.getUnavailableDishesByCategory(id));
+    }
+    
 }
