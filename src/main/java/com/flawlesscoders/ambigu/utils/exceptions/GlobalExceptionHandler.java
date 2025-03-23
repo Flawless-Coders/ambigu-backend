@@ -37,4 +37,11 @@ public class GlobalExceptionHandler {
         errorResponse.put("message", "Tipo de medio no soportado");
         return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(errorResponse);
     }
+
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("message", ex.getReason());
+        return ResponseEntity.status(ex.getStatusCode()).body(errorResponse);
+    }
 }
