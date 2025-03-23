@@ -11,12 +11,6 @@ public interface DishRepository extends MongoRepository<Dish, String> {
     @Query("{ 'category': ?0 }")
     List<Dish> findDishesByCategory(String categoryId);
 
-    //mis cambios
-    @Query("{ 'status': true, 'category': ?0 }")
-    List<Dish> findAvailableDishesByCategory(String categoryId);
-    //mis cambios
-    @Query("{ 'status': false, 'category': ?0 }")
-    List<Dish> findUnavailableDishesByCategory(String categoryId);
-    
-
+    @Query("{ 'status': ?0, 'category': ?1 }")
+    List<Dish> findDishesByCategoryAndStatus(boolean available, String categoryId);    
 }

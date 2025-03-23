@@ -79,7 +79,7 @@ public class DishService {
         existingDish.setDescription(updatedDish.getDescription());
         existingDish.setCategory(updatedDish.getCategory());
         existingDish.setPrice(updatedDish.getPrice());
-        //mi cambio
+        // mi cambio
         existingDish.setImageBase64(updatedDish.getImageBase64());
         return dishRepository.save(existingDish);
     }
@@ -132,20 +132,19 @@ public class DishService {
         }
     }
 
-    //mis cambios
-    public List<Dish> getAvailableDishesByCategory(String categoryId) {
+    /**
+     * Find all available or unavailable dishes by their category and status
+     * 
+     * @param available The status of the category.
+     * @param categoryId The ID of the category.
+     */
+    public List<Dish> getDishesByCategoryAndStatus(boolean available, String categoryId) {
         try {
-            return dishRepository.findAvailableDishesByCategory(categoryId);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Error al obtener los platillos: " + e.getMessage());
-        }
-    }
-    //mis cambios
-    public List<Dish> getUnavailableDishesByCategory(String categoryId) {
-        try {
-            return dishRepository.findUnavailableDishesByCategory(categoryId);
+            if(available){
+                return dishRepository.findDishesByCategoryAndStatus(true, categoryId);
+            }else{
+                return dishRepository.findDishesByCategoryAndStatus(false, categoryId);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
