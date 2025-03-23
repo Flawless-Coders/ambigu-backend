@@ -165,5 +165,11 @@ public class WaiterController {
         @PathVariable String id ) {
         return waiterService.changeLeaderStatus(id);
     }
+
+    @GetMapping("/public")
+public ResponseEntity<List<GetWaiterWAvatarDTO>> getAllPublicWaiters() {
+    return waiterService.getWaitersWAvatar();
+}
+
     
 }

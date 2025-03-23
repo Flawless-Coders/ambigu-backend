@@ -36,6 +36,7 @@ public class ModifyRequest {
     private String waiter;
     private long orderNumber;
     private String table;
+    private String tableName;
     private boolean toDelete;
     private boolean deletedRequest;
 }

@@ -156,15 +156,14 @@ public class MenuController {
         
         }
 
-        @Operation(summary = "Change menu status", description = "Toggles the status of a menu between active and inactive")
+        @Operation(summary = "Assign a menu as current", description = "Change the menu status to true if there is not a current menu")
         @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Status changed successfully"),
+            @ApiResponse(responseCode = "204", description = "Assign as a current menu successfully"),
             @ApiResponse(responseCode = "404", description = "Menu not found")
         })
-        @PutMapping("/status/{id}")
-        public ResponseEntity<Void> changeStatus(@PathVariable String id) {
-            menuService.changeStatus(id);
-            return ResponseEntity.noContent().build();
+        @PutMapping("/assignAsCurrent/{id}")
+        public ResponseEntity<Boolean> assingAsCurrent(@PathVariable String id) {
+            return ResponseEntity.ok(menuService.assingAsCurrent(id));
         }
 
         @Operation(summary = "Add a dish to a menu", description = "Associates a dish with an existing menu")
@@ -195,9 +194,9 @@ public class MenuController {
             @ApiResponse(responseCode = "200", description = "List retrieved successfully", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = Menu.class)) }),
             @ApiResponse(responseCode = "500", description = "Server error")
         })
-        @GetMapping("/findAll/{status}")
-        public ResponseEntity<List<Menu>> findAll(@PathVariable boolean status){
-            List<Menu> menus = menuService.getByStatus(status);
+        @GetMapping()
+        public ResponseEntity<List<Menu>> findAll(){
+            List<Menu> menus = menuService.findAll();
             return ResponseEntity.ok(menus);
         }
 
@@ -218,8 +217,23 @@ public class MenuController {
             @ApiResponse(responseCode = "200", description = "Category list retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Menu not found")
         })
-        @GetMapping("/getCategoriesByDisableMenu/{menuId}")
-        public ResponseEntity<List<Category>> getCategoriesByDisableMenu(@PathVariable String menuId){
-        return ResponseEntity.ok(menuService.getCategoriesByDisableMenu(menuId));
+        @GetMapping("/getCategoriesByMenu/{menuId}")
+        public ResponseEntity<List<Category>> getCategoriesByMenu(@PathVariable String menuId){
+        return ResponseEntity.ok(menuService.getCategoriesByMenu(menuId));
+        }
+
+        @Operation(summary = "Deactivates the current menu", description = "Change the menu status to false it is the current menu")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Deactivates the current menu successfully"),
+            @ApiResponse(responseCode = "404", description = "Menu not found")
+        })
+        @PutMapping("/inactivateMenu/{id}")
+        public ResponseEntity<Boolean> inactivateMenu(@PathVariable String id) {
+            return ResponseEntity.ok(menuService.inactivateMenu(id));
+        }
+
+        @GetMapping("/isCurrentMenu")
+        public ResponseEntity<Boolean> isCurrentMenu(){
+            return ResponseEntity.ok(menuService.isCurrentMenu());
         }
     }

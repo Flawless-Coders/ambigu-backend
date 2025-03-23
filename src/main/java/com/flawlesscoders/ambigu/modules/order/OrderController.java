@@ -2,11 +2,13 @@ package com.flawlesscoders.ambigu.modules.order;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.flawlesscoders.ambigu.modules.order.dto.OrderFeedbackDTO;
 
@@ -66,7 +68,7 @@ public class OrderController {
         @ApiResponse(responseCode = "404", description = "Order not found")
     })
     @PutMapping("/finalize/{id}")
-    public ResponseEntity<Order> finalizeOrder(@PathVariable String id){
+    public ResponseEntity<String> finalizeOrder(@PathVariable String id){
         return ResponseEntity.ok(service.finalizeOrder(id));
     }
 
@@ -100,4 +102,10 @@ public class OrderController {
     public ResponseEntity<Order> getCurrentTableOrder(@PathVariable String tableName){
         return ResponseEntity.ok(service.getCurrentTableOrder(tableName));
     }
+
+    @GetMapping("/public/{orderNumber}")
+    public ResponseEntity<Order> getOrderByOrderNumber(@PathVariable long orderNumber) {
+        return ResponseEntity.ok(service.findByOrderNumber(orderNumber));
+    }
+
 }

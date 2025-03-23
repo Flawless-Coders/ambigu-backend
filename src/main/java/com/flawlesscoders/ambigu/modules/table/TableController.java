@@ -67,8 +67,9 @@ public class TableController {
         @ApiResponse(responseCode = "404", description = "Mesa no encontrada"),
         @ApiResponse(responseCode = "500", description = "Error en el servidor")
     })
-    @PutMapping()
-    public ResponseEntity<Table> update(@Validated @RequestBody Table table) {
+    @PutMapping("/{id}")
+    public ResponseEntity<Boolean> update(@PathVariable String id, @RequestBody Table table) {
+        table.setId(id); // Asigna el ID recibido en la URL al objeto Table
         return ResponseEntity.ok(tableService.updateTable(table));
     }
 
