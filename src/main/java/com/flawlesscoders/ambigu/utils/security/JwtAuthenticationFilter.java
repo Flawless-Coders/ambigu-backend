@@ -9,7 +9,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.flawlesscoders.ambigu.modules.auth.tokenBlacklist.BlacklistTokenRepository;
+import com.flawlesscoders.ambigu.modules.auth.token.TokenRepository;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsServiceImpl userDetailsService;
-    private final BlacklistTokenRepository blacklistTokenRepository;
+    private final TokenRepository tokenRepository;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
@@ -32,8 +32,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if(authHeader != null && authHeader.startsWith("Bearer ")){
                 String token = authHeader.replace("Bearer ", "");
 
-                if(blacklistTokenRepository.existsByToken(token)){
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token invalido, por favor inicie sesión nuevamente");
+                if (tokenRepository.existsByTokenAndRevokedTrue(token)) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token revocado. Por favor, inicie sesión nuevamente.");
                     return;
                 }
 
