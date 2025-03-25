@@ -5,20 +5,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.order.dto.OrderFeedbackDTO;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequest;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequestRepository;
 import com.flawlesscoders.ambigu.modules.table.Table;
 import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
 import com.flawlesscoders.ambigu.modules.table.TableRepository;
-import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
 import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
 import com.flawlesscoders.ambigu.modules.workplan.WorkplanService;
 
@@ -32,7 +30,6 @@ public class OrderService {
     private final OrderRepository repository;
     private final ModifyRequestRepository requestRepository;
     private final TableRepository tableRepository;
-    private final WaiterRepository waiterRepository;
     private final WorkplanService workplanService;
 
     /**
@@ -62,6 +59,10 @@ public class OrderService {
     public Order createOrder(Order order){
         float total = 0;
         try{
+
+            Table table = tableRepository.findById(order.getTable())
+            .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
+
             for(int i = 0; i< order.getDishes().size(); i++){
                 total += order.getDishes().get(i).getUnitPrice() * order.getDishes().get(i).getQuantity();
             }
@@ -83,9 +84,11 @@ public class OrderService {
 
             order.setDate(new Date());
 
+            order.setTableName(table.getTableIdentifier());
+
             repository.save(order);
 
-            Table table = tableRepository.findByTableIdentifier(order.getTable());
+           
             table.setTableClientStatus(TableClientStatus.OCCUPIED);
             tableRepository.save(table);
             return order;
@@ -110,6 +113,8 @@ public class OrderService {
                     order.setDishes(found.getModifiedDishes());
                     order.setTotal(found.getTotal());
                     order.setWaiter(found.getWaiter());
+                    order.setTable(found.getTable());
+                    order.setTableName(found.getTableName());
                     repository.save(order);
                     found.setDeletedRequest(true);
                     requestRepository.save(found);
@@ -138,7 +143,8 @@ public class OrderService {
             if (deleteRequestFound != null){
                 Order found = repository.findById(deleteRequestFound.getOrderId()).orElse(null);
                 if (found != null){
-                    Table table = tableRepository.findByTableIdentifier(found.getTable());
+                    Table table = tableRepository.findById(found.getTable())
+                    .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
                     found.setDeleted(true);
                     repository.save(found);
                     deleteRequestFound.setDeletedRequest(true);
@@ -166,16 +172,17 @@ public class OrderService {
      * @return The finalized order.
      * @throws ResponseStatusException if the order does not exist.
      */
-    public Order finalizeOrder(String id){
+    public String finalizeOrder(String id){
         try{
             Order found = repository.findById(id).orElse(null);
             if (found != null){
-                Table table = tableRepository.findByTableIdentifier(found.getTable());
+                Table table = tableRepository.findById(found.getTable())
+                .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
                 found.setFinalized(true);
                 table.setTableClientStatus(TableClientStatus.UNOCCUPIED);
                 tableRepository.save(table);
                 repository.save(found);
-                return found;
+                return "http://192.168.0.9/prueba/" + found.getOrderNumber();
             }else{
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
             }
@@ -225,7 +232,7 @@ public class OrderService {
         List <Order> orders = new ArrayList<>();
         
         for (Table table : tables) {
-            Order order = repository.getCurrentOrder(table.getTableIdentifier());
+            Order order = repository.getCurrentOrder(table.getId());
             if (order != null) { // Verifica si la orden no es null
                 orders.add(order);
             }
@@ -233,16 +240,23 @@ public class OrderService {
         return orders != null ? orders : Collections.emptyList();
     }
 
-    /**
-     * Retrieves all finalized orders.
-     * @return List of finalized orders.
-     */
-    public List<Order> getFinalizedOrders(String waiterEmail){
-        Waiter waiter = waiterRepository.findByEmail(waiterEmail).
-        orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
-        System.out.println(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
-        return repository.getFinalizedOrders(waiter.getName() + " " + waiter.getLastname_p() + " " +waiter.getLastname_m());
+    public List<Order> getFinalizedOrders(String waiterEmail) {
+        // Obtener las mesas asignadas al mesero
+        List<Table> tables = workplanService.getTablesInChargeByWaiterInWorkplan(waiterEmail);
+        List<Order> orders = new ArrayList<>();
+    
+        // Recorrer las mesas y obtener las órdenes finalizadas de cada una
+        for (Table table : tables) {
+            List<Order> tableOrders = repository.getFinalizedOrders(table.getId());
+            if (tableOrders != null && !tableOrders.isEmpty()) { // Verifica si la lista de órdenes no es null ni está vacía
+                orders.addAll(tableOrders); // Agrega todas las órdenes de la mesa a la lista principal
+            }
+        }
+    
+        // Retorna la lista de órdenes, o una lista vacía si no hay órdenes
+        return !orders.isEmpty() ? orders : Collections.emptyList();
     }
+
 
      public Order addDishes(List<OrderDishes> dishes, String orderId) {
         Order order = repository.findById(orderId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -281,6 +295,20 @@ public class OrderService {
             return repository.save(order);
         } else {
             return null;
+        }
+    }
+
+    public Order findByOrderNumber(long numberOrder){
+        Order order = repository.findByOrderNumber(numberOrder);
+        try {
+            if(order != null){
+                return order;
+            }else{
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error interno");
         }
     }
 }

@@ -1,8 +1,11 @@
 package com.flawlesscoders.ambigu.modules.workplan;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -19,6 +22,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.flawlesscoders.ambigu.modules.order.Order;
+import com.flawlesscoders.ambigu.modules.order.OrderRepository;
+import com.flawlesscoders.ambigu.modules.order.OrderService;
 import com.flawlesscoders.ambigu.modules.table.Table;
 import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
 import com.flawlesscoders.ambigu.modules.table.TableRepository;
@@ -49,6 +55,7 @@ public class WorkplanService {
     private final WaiterService waiterService;
     private static final Logger logger = LoggerFactory.getLogger(WorkplanService.class);
 
+    private final OrderRepository orderRepository;
 
     //method to initialize a workplan
      public Workplan initializeWorkplan(String workplanName) {
@@ -383,9 +390,17 @@ public class WorkplanService {
     
                 // Marcar la mesa como disponible
                 foundTable.setTableWaiter(false);
+                foundTable.setTableClientStatus(TableClientStatus.UNOCCUPIED);
                 tableRepository.save(foundTable); // Guardar el cambio en la mesa
             }
-    
+
+            List<Order> orders= orderRepository.findAll();
+
+            for (Order order : orders) {
+                order.setFinalized(true);
+                orderRepository.save(order);
+            }
+
             // Marcar el Workplan como inactivo
             workplan.setPresent(false);
             workplanRepository.save(workplan);
@@ -825,5 +840,49 @@ public class WorkplanService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al actualizar la hora del mesero");
         }
     }
+
+    public List<Table> getTablesInChargeByWaiter(String waiterEmail) {
+        try {
+            // Buscar al mesero por email
+            Waiter waiter = waiterRepository.findByEmail(waiterEmail)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+    
+            String waiterId = waiter.getId(); // Obtenemos el ID del mesero
+    
+            // Buscar el Workplan activo
+            Workplan workplan = workplanRepository.findByIsPresent(true)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un plan de trabajo activo"));
+    
+            // Filtrar las mesas donde el `waiterId` está asignado en algún WaiterWorkplan
+            List<Table> tables = workplan.getAssigment().stream()
+                    .filter(assignment -> {
+                        // Verificar si el mesero está asignado a esta mesa
+                        return assignment.getWaiterWorkplan().stream()
+                                .anyMatch(waiterWorkplan -> waiterWorkplan.getWaiter().equals(waiterId));
+                    })
+                    .map(assignment -> tableRepository.findById(assignment.getTable())
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada")))
+                    .collect(Collectors.toList());
+    
+            return tables;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas asignadas al mesero en el plan de trabajo");
+        }
+    }
+
+    public List<Workplan> findRecentWorkplans() {
+    try {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, -5); // Fecha hace 5 días
+        Date fiveDaysAgo = calendar.getTime();
+
+        return workplanRepository.findByDateAfter(fiveDaysAgo);
+    } catch (Exception e) {
+        e.printStackTrace();
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener workplans recientes");
+    }
+}
+
 }
 

@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -136,5 +139,10 @@ public class DishController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
         }
+    }
+
+    @GetMapping("/byCategory/{id}")
+    public ResponseEntity<List<Dish>>getDishesByCategory(@PathVariable String id) {
+        return ResponseEntity.ok(dishService.getDishesByCategory(id));
     }
 }

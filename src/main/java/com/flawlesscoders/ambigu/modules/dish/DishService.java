@@ -118,4 +118,13 @@ public class DishService {
         }
     }
 
+    public List<Dish> getDishesByCategory(String categoryId){
+        try {
+            return dishRepository.findDishesByCategory(categoryId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST); 
+        }
+    }
+
 }
