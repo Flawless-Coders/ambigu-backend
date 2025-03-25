@@ -30,7 +30,8 @@ public class DishController {
         try {
             return ResponseEntity.ok(dishService.getAllDishes());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while retrieving dishes.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while retrieving dishes.");
         }
     }
 
@@ -61,7 +62,8 @@ public class DishController {
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while saving the dish.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while saving the dish.");
         }
     }
 
@@ -79,7 +81,8 @@ public class DishController {
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the dish.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while updating the dish.");
         }
     }
 
@@ -98,7 +101,8 @@ public class DishController {
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while disabling the dish.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while disabling the dish.");
         }
     }
 
@@ -116,21 +120,21 @@ public class DishController {
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while changing the dish status.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while changing the dish status.");
         }
     }
 
     @Operation(summary = "Update dish image", description = "Updates the image of a dish using Base64 encoding")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Dish image updated successfully"),
-        @ApiResponse(responseCode = "404", description = "Dish not found"),
-        @ApiResponse(responseCode = "400", description = "Invalid image data")
+            @ApiResponse(responseCode = "200", description = "Dish image updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Dish not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid image data")
     })
-    @PatchMapping(value = "/image/{id}", consumes = {"multipart/form-data"})
+    @PatchMapping(value = "/image/{id}", consumes = { "multipart/form-data" })
     public ResponseEntity<?> updateDishImage(
-        @PathVariable String id,
-        @RequestPart("image") MultipartFile image
-    ) {
+            @PathVariable String id,
+            @RequestPart("image") MultipartFile image) {
         try {
             dishService.updateDishImage(id, image);
             return ResponseEntity.ok("Image updated successfully.");
@@ -141,8 +145,16 @@ public class DishController {
         }
     }
 
+    @Operation(summary = "Get available or unavailable dishes by category", description = "Retrieves a list of available dishes for a given category ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Dishes retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Category not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters")
+    })
     @GetMapping("/byCategory/{id}")
-    public ResponseEntity<List<Dish>>getDishesByCategory(@PathVariable String id) {
-        return ResponseEntity.ok(dishService.getDishesByCategory(id));
+    public ResponseEntity<List<Dish>> getAvailableDishesByCategory(@PathVariable String id,
+            @RequestParam boolean available) {
+        return ResponseEntity.ok(dishService.getDishesByCategoryAndStatus(available, id));
     }
+
 }
