@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.flawlesscoders.ambigu.modules.auth.tokenBlacklist.BlacklistToken;
-import com.flawlesscoders.ambigu.modules.auth.tokenBlacklist.BlacklistTokenRepository;
+import com.flawlesscoders.ambigu.modules.auth.token.TokenRepository;
 import com.flawlesscoders.ambigu.utils.security.JwtTokenProvider;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
     private final AuthService authService;
 
-    private final BlacklistTokenRepository blacklistTokenRepository;
+    private final TokenRepository tokenRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Operation(summary ="Login with platform restriction")
@@ -52,9 +51,10 @@ public class AuthController {
     public ResponseEntity<String> logout(HttpServletRequest request) {
         String token = request.getHeader("Authorization").substring(7);
 
-        Date expirationDate = jwtTokenProvider.getExpirationDateFromToken(token);
-
-        blacklistTokenRepository.save(new BlacklistToken(token, expirationDate));
+        tokenRepository.findById(token).ifPresent(foundToken -> {
+            foundToken.setRevoked(true);
+            tokenRepository.save(foundToken);
+        });
 
         return ResponseEntity.ok("Logout exitoso");
     }
