@@ -265,5 +265,15 @@ public class WorkplanController {
     public ResponseEntity<WaiterWorkplan> updateWaiterHours(@PathVariable String workplanId, @PathVariable String tableId, @PathVariable String waiterId, @RequestBody WaiterWorkplan newHourWaiter){
         return ResponseEntity.ok(workplanService.updateWaiterWorkplanHours(workplanId, tableId, waiterId, newHourWaiter));
     }
-        
+
+    @Operation(summary = "Obtener planes de trabajo recientes (últimos 5 días)", description = "Retorna todos los planes de trabajo creados en los últimos 5 días")
+    @ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Workplans recientes obtenidos correctamente"),
+    @ApiResponse(responseCode = "400", description = "Error al obtener workplans recientes"),
+    @ApiResponse(responseCode = "500", description = "Error en el servidor")
+    })
+    @GetMapping("/recentWorkplans")
+    public ResponseEntity<List<Workplan>> getRecentWorkplans() {
+        return ResponseEntity.ok(workplanService.findRecentWorkplans());
+    }        
 }

@@ -6,7 +6,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,7 +50,6 @@ public class ThemingController {
     //UPDATE FONTS
     @PatchMapping("/fonts")
     public ResponseEntity<Void> updateFonts(@RequestBody Theming theming) {
-        System.out.println(theming);
         return themingService.updateFonts(theming);
     }
 
@@ -60,4 +63,11 @@ public class ThemingController {
     public ResponseEntity<Void> updateLogos(@RequestPart("logo") MultipartFile logo, @RequestPart("logoSmall") MultipartFile logoSmall) {
         return themingService.updateLogos(logo, logoSmall);
     }
+
+    //Apply the theme
+    @PostMapping("/apply")
+    public ResponseEntity<?> applyChanges(HttpServletRequest request) {
+        return themingService.applyChanges(request.getSession().getId());
+    }
+    
 }
