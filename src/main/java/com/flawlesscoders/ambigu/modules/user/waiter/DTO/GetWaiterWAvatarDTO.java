@@ -14,5 +14,5 @@ public class GetWaiterWAvatarDTO {
     private String avatarBase64;
     private String phone;
     private boolean isLeader;
-    private int AvgRating;
+    private float avgRating;
 }

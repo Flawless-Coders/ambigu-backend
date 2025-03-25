@@ -1,0 +1,23 @@
+package com.flawlesscoders.ambigu.modules.dashboard;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/dashboard")
+@RequiredArgsConstructor
+public class DashboardController {
+    private final DashboardService dashboardService;
+
+    @GetMapping("/top5-waiters")
+    public ResponseEntity<List<Map<String, Object>>> getTop5WaitersByRating() {
+        return dashboardService.getTop5WaitersByRating();
+    }
+}

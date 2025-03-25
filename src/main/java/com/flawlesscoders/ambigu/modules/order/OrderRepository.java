@@ -21,4 +21,7 @@ public interface OrderRepository extends MongoRepository<Order, String>{
     @Query("{'orderNumber': ?0}")
     Order findByOrderNumber(long orderNumber);
 
+    //FindByDateBetween
+    List<Order> findByDateBetween(java.util.Date from, java.util.Date to);
+
 }

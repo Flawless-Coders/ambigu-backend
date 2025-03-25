@@ -24,5 +24,5 @@ public class Waiter extends User {
     private boolean isLeader;
 
     @Schema(description = "Average rating of the waiter")
-    private int AvgRating;
+    private float avgRating;
 }
