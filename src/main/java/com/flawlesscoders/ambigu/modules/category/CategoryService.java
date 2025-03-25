@@ -124,5 +124,9 @@ public class CategoryService {
         category.setStatus(!category.isStatus());
         categoryRepository.save(category);
     }
+
+    public List<Category> findByStatus(boolean status){
+        return categoryRepository.findByStatus(status);
+    }
     
 }
