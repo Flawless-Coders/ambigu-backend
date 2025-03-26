@@ -8,6 +8,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.dish.DishRepository;
+
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
@@ -123,6 +125,10 @@ public class CategoryService {
         Category category = getCategoryById(id);
         category.setStatus(!category.isStatus());
         categoryRepository.save(category);
+    }
+
+    public List<Category> findByStatus(boolean status){
+        return categoryRepository.findByStatus(status);
     }
     
 }

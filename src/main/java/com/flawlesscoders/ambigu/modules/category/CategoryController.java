@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -144,5 +147,10 @@ public ResponseEntity<?> saveCategory(
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
         }
+    }
+
+    @GetMapping("/getByStatus/{status}")
+    public ResponseEntity<List<Category>> getByStatus(@PathVariable boolean status){
+        return ResponseEntity.ok(categoryService.findByStatus(status));
     }
 }

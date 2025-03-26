@@ -201,10 +201,10 @@ public class MenuService {
      */
     public boolean addDish(String dishId, String menuId) {
         Dish dish = dishRepository.findById(dishId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Dish not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platillo no encontrado"));
 
         Menu menu = menuRepository.findById(menuId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu no encontrado"));
 
         if (menu.getDishes() == null) {
             menu.setDishes(new ArrayList<>());
@@ -223,8 +223,9 @@ public class MenuService {
 
             menuRepository.save(menu);
             return true;
+        }else{
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El platillo ya está en el menú");
         }
-        return false;
     }
 
     /**
