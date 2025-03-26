@@ -1,11 +1,13 @@
 package com.flawlesscoders.ambigu.modules.dashboard;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DashboardService {
     private final OrderRepository orderRepository;
-
     private final WaiterRepository waiterRepository;
 
     public ResponseEntity<List<Map<String, Object>>> getTop5WaitersByRating() {
@@ -37,5 +38,133 @@ public class DashboardService {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching top waiters", e);
         }
+    }
+
+    public ResponseEntity<Map<String, Object>> getOrdersByFrameDay(String frame) {
+        try {
+            Date from = new Date();
+            Date to = new Date();
+            boolean isRange = false;
+    
+            //Determinate Date Range
+            switch (frame) {
+                case "today":
+                    from = getStartOfDay(new Date());
+                    to = getEndOfDay(new Date());
+                    break;
+                case "week":
+                    from = new Date(System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000);
+                    to = getEndOfDay(new Date());
+                    isRange = true;
+                    break;
+                case "month":
+                    from = new Date(System.currentTimeMillis() - 29L * 24 * 60 * 60 * 1000);
+                    to = getEndOfDay(new Date());
+                    isRange = true;
+                    break;
+                default:
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid frame value");
+            }
+    
+            // Find range on db
+            List<Order> orders = orderRepository.findByDateBetween(from, to);
+    
+            if (isRange) {
+                // Count orders per day
+                Map<String, Long> dailyOrdersMap = new HashMap<>();
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    
+                for (Order order : orders) {
+                    String date = dateFormat.format(order.getDate());
+                    dailyOrdersMap.put(date, dailyOrdersMap.getOrDefault(date, 0L) + 1);
+                }
+    
+                // Fill with 0 the missing days
+                List<Map<String, Object>> filledDailyOrders = new ArrayList<>();
+                List<String> allDates = getAllDatesInRange(from, to);
+                for (String date : allDates) {
+                    filledDailyOrders.add(Map.of(
+                        "date", date,
+                        "count", dailyOrdersMap.getOrDefault(date, 0L)
+                    ));
+                }
+    
+                // Calcule orders total
+                long totalOrders = orders.size();
+    
+                // CBuild response
+                Map<String, Object> response = new HashMap<>();
+                response.put("totalOrders", totalOrders);
+                response.put("dailyOrders", filledDailyOrders);
+    
+                return ResponseEntity.ok(response);
+            } else {
+                // Hour process
+                Map<Integer, Long> hourlyOrdersMap = new HashMap<>();
+                Calendar calendar = Calendar.getInstance();
+    
+                for (Order order : orders) {
+                    calendar.setTime(order.getDate());
+                    int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                    hourlyOrdersMap.put(hour, hourlyOrdersMap.getOrDefault(hour, 0L) + 1);
+                }
+    
+                // Fill with 0
+                List<Map<String, Object>> filledHourlyOrders = new ArrayList<>();
+                for (int hour = 0; hour < 24; hour++) {
+                    filledHourlyOrders.add(Map.of(
+                        "hour", hour,
+                        "count", hourlyOrdersMap.getOrDefault(hour, 0L)
+                    ));
+                }
+    
+                // Calculate total orders
+                long totalOrders = orders.size();
+    
+                // Build response
+                Map<String, Object> response = new HashMap<>();
+                response.put("totalOrders", totalOrders);
+                response.put("hourlyOrders", filledHourlyOrders);
+    
+                return ResponseEntity.ok(response);
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching orders", e);
+        }
+    }
+    
+    private List<String> getAllDatesInRange(Date from, Date to) {
+        List<String> dates = new ArrayList<>();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(from);
+    
+        while (!calendar.getTime().after(to)) {
+            Date currentDate = calendar.getTime();
+            dates.add(new SimpleDateFormat("yyyy-MM-dd").format(currentDate));
+            calendar.add(Calendar.DATE, 1);
+        }
+    
+        return dates;
+    }
+    
+    private Date getStartOfDay(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+    
+    private Date getEndOfDay(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 999);
+        return calendar.getTime();
     }
 }

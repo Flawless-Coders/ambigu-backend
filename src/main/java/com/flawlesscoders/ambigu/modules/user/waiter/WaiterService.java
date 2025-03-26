@@ -49,7 +49,7 @@ public class WaiterService {
             .avatarBase64(waiter.getAvatarBase64())
             .phone(waiter.getPhone())
             .isLeader(waiter.isLeader())
-            .AvgRating(waiter.getAvgRating())
+            .avgRating(waiter.getAvgRating())
             .build();
     }
 

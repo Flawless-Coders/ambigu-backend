@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,5 +20,10 @@ public class DashboardController {
     @GetMapping("/top5-waiters")
     public ResponseEntity<List<Map<String, Object>>> getTop5WaitersByRating() {
         return dashboardService.getTop5WaitersByRating();
+    }
+
+    @GetMapping("/orders-number/{frame}")
+    public ResponseEntity<Map<String, Object>> getOrdersByFrameDay(@PathVariable("frame")String frame) {
+        return dashboardService.getOrdersByFrameDay(frame);
     }
 }
