@@ -167,4 +167,27 @@ public class DashboardService {
         calendar.set(Calendar.MILLISECOND, 999);
         return calendar.getTime();
     }
+
+    //Get the percentage of increase or decrease of the orders from the last day
+    public ResponseEntity<Map<String, Object>> getOrdersPercentage() {
+        try {
+            Date today = new Date();
+            Date yesterday = new Date(System.currentTimeMillis() - 1L * 24 * 60 * 60 * 1000);
+    
+            long todayOrders = orderRepository.countByDate(today);
+            long yesterdayOrders = orderRepository.countByDate(yesterday);
+    
+            double percentage = 0;
+            if (yesterdayOrders != 0) {
+                percentage = ((double) todayOrders - yesterdayOrders) / yesterdayOrders * 100;
+            }
+    
+            Map<String, Object> response = new HashMap<>();
+            response.put("percentage", percentage);
+    
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching orders percentage", e);
+        }
+    }
 }

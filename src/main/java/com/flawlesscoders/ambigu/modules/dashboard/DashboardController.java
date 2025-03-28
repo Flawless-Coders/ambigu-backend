@@ -26,4 +26,9 @@ public class DashboardController {
     public ResponseEntity<Map<String, Object>> getOrdersByFrameDay(@PathVariable("frame")String frame) {
         return dashboardService.getOrdersByFrameDay(frame);
     }
+
+    @GetMapping("/orders-percentage")
+    public ResponseEntity<Map<String, Object>> getOrdersPercentage(){
+        return dashboardService.getOrdersPercentage();
+    }
 }

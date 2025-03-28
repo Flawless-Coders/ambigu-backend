@@ -26,4 +26,6 @@ public interface OrderRepository extends MongoRepository<Order, String>{
     //FindByDateBetween
     List<Order> findByDateBetween(java.util.Date from, java.util.Date to);
 
+    //CountByDate
+    long countByDate(Date date);
 }
