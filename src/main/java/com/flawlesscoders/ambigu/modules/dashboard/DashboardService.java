@@ -1,9 +1,13 @@
 package com.flawlesscoders.ambigu.modules.dashboard;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -12,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -19,9 +24,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.flawlesscoders.ambigu.modules.category.Category;
+import com.flawlesscoders.ambigu.modules.category.CategoryRepository;
+import com.flawlesscoders.ambigu.modules.dish.Dish;
+import com.flawlesscoders.ambigu.modules.dish.DishRepository;
 import com.flawlesscoders.ambigu.modules.order.Order;
+import com.flawlesscoders.ambigu.modules.order.OrderDishes;
 import com.flawlesscoders.ambigu.modules.order.OrderRepository;
 import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
+import java.util.function.Function;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +41,8 @@ import lombok.RequiredArgsConstructor;
 public class DashboardService {
     private final OrderRepository orderRepository;
     private final WaiterRepository waiterRepository;
+    private final CategoryRepository categoryRepository;
+    private final DishRepository dishRepository;
 
     public ResponseEntity<List<Map<String, Object>>> getTop5WaitersByRating() {
         try {
@@ -271,4 +284,129 @@ public class DashboardService {
     private String capitalize(String str) {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
+
+    public ResponseEntity<Map<String, Object>> getOrdersByCategory(String range) {
+    try {
+        // 1. Configuración de fechas según el rango
+        LocalDate today = LocalDate.now();
+        LocalDate startDate;
+        
+        switch (range.toLowerCase()) {
+            case "last7days":
+                startDate = today.minusDays(6);
+                break;
+            case "last30days":
+            case "lastmonth":
+                startDate = today.minusDays(29);
+                break;
+            case "last6months":
+                startDate = today.minusMonths(5).withDayOfMonth(1);
+                break;
+            default:
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Rango inválido. Use: last7days, last30days, lastmonth o last6months")
+                );
+        }
+
+        LocalDate endDate = today;
+
+        // 2. Conversión a fechas compatibles con MongoDB
+        Date from = Date.from(startDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date to = Date.from(endDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant());
+
+        // 3. Obtener todas las categorías primero (para mapear ID → Nombre)
+        Map<String, String> categoryIdToName = categoryRepository.findAll()
+                .stream()
+                .filter(Category::isStatus) // Solo categorías activas
+                .collect(Collectors.toMap(
+                        Category::getId,
+                        Category::getName
+                ));
+
+        // 4. Obtener órdenes válidas en el rango
+        List<Order> orders = orderRepository.findByDateBetween(from, to)
+                .stream()
+                .filter(order -> !order.isDeleted())
+                .collect(Collectors.toList());
+
+        // 5. Obtener todos los platillos (activos)
+        Map<String, Dish> dishMap = dishRepository.findAll()
+                .stream()
+                .filter(Dish::isStatus) // Solo platillos activos
+                .collect(Collectors.toMap(Dish::getId, dish -> dish));
+
+        // 6. Obtener nombres de categorías únicas
+        Set<String> categoryNames = dishMap.values()
+                .stream()
+                .map(Dish::getCategory)
+                .filter(categoryIdToName::containsKey) // Solo categorías existentes
+                .map(categoryIdToName::get)
+                .collect(Collectors.toSet());
+
+        // 7. Inicializar estructura de resultados
+        Map<String, Map<String, Double>> result = new LinkedHashMap<>();
+        
+        // Rellenar todos los meses en el rango
+        YearMonth current = YearMonth.from(startDate);
+        YearMonth end = YearMonth.from(endDate);
+
+        while (!current.isAfter(end)) {
+            String monthKey = formatMonth(current);
+            Map<String, Double> monthData = new HashMap<>();
+            categoryNames.forEach(name -> monthData.put(name, 0.0));
+            result.put(monthKey, monthData);
+            current = current.plusMonths(1);
+        }
+
+        // 8. Procesar órdenes
+        for (Order order : orders) {
+            LocalDate orderDate = order.getDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            String monthKey = formatMonth(YearMonth.from(orderDate));
+
+            for (OrderDishes item : order.getDishes()) {
+                Dish dish = dishMap.get(item.getDishId());
+                if (dish != null) {
+                    String categoryName = categoryIdToName.get(dish.getCategory());
+                    if (categoryName != null) {
+                        double subtotal = item.getUnitPrice() * item.getQuantity();
+                        result.get(monthKey).merge(
+                                categoryName,
+                                subtotal,
+                                Double::sum
+                        );
+                    }
+                }
+            }
+        }
+
+        // 9. Construir respuesta
+        Map<String, Object> response = new HashMap<>();
+        response.put("data", result);
+        response.put("categories", new ArrayList<>(categoryNames)); // Convertir a List para orden consistente
+        response.put("range", range);
+        response.put("fromDate", startDate.toString());
+        response.put("toDate", endDate.toString());
+
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        e.printStackTrace(); // Para depuración
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "error", "Error al generar reporte",
+                    "details", e.getMessage()
+                ));
+    }
+}
+
+private String formatMonth(YearMonth ym) {
+    String monthName = ym.getMonth().getDisplayName(
+        TextStyle.SHORT, 
+        new Locale("es", "ES")
+    );
+    return capitalize(monthName) + " " + ym.getYear();
+}
+
 }

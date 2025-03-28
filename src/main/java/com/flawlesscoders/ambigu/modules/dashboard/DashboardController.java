@@ -36,4 +36,10 @@ public class DashboardController {
     public ResponseEntity<Map<String, Object>> getOrdersChart(){
         return dashboardService.buildOrdersChartData();
     }
+
+    @GetMapping("/orders-by-category/{frame}")
+    public ResponseEntity<Map<String, Object>> getOrdersByCategory(@PathVariable("frame")String frame){
+        return dashboardService.getOrdersByCategory(frame);
+    }
+
 }
