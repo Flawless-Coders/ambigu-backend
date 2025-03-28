@@ -1,5 +1,7 @@
 package com.flawlesscoders.ambigu.modules.auth;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -7,12 +9,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.flawlesscoders.ambigu.modules.auth.token.Token;
+import com.flawlesscoders.ambigu.modules.auth.token.TokenRepository;
 import com.flawlesscoders.ambigu.modules.user.base.Role;
 import com.flawlesscoders.ambigu.modules.user.base.User;
 import com.flawlesscoders.ambigu.modules.user.base.UserRepository;
 import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
 import com.flawlesscoders.ambigu.utils.security.JwtTokenProvider;
 
+import io.micrometer.core.ipc.http.HttpSender.Response;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -22,6 +27,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
 
     public String login(AuthRequest request) {
@@ -51,7 +57,15 @@ public class AuthService {
             isLeader = waiter.isLeader();
         }
 
-        return jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name(), isLeader);
+        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name(), isLeader);
+
+        Token newToken = new Token();
+        newToken.setToken(token);
+        newToken.setUsername(user.getEmail());
+        newToken.setRevoked(false);
+        tokenRepository.save(newToken);
+
+        return token;
     }
 
     public ResponseEntity<String> validateToken( String token) {
@@ -60,6 +74,16 @@ public class AuthService {
         } else {
             return ResponseEntity.status(401).body("Token invalido");
         }
+    }
+
+    //Eliminar todos los tokens activos
+    public ResponseEntity<String> revokeAllTokens() {
+        List<Token> tokens = tokenRepository.findAll();
+        tokens.forEach(token -> {
+            token.setRevoked(true);
+            tokenRepository.save(token);
+        });
+        return ResponseEntity.ok("Tokens revocados");
     }
 
 

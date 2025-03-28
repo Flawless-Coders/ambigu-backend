@@ -16,5 +16,5 @@ public class GetWaiterDTO {
     private String phone;
     private boolean isLeader;
     private boolean status;
-    private int AvgRating;
+    private float avgRating;
 }

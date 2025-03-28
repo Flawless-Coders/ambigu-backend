@@ -1,8 +1,11 @@
 package com.flawlesscoders.ambigu.modules.workplan;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -867,5 +870,19 @@ public class WorkplanService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas asignadas al mesero en el plan de trabajo");
         }
     }
+
+    public List<Workplan> findRecentWorkplans() {
+    try {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, -5); // Fecha hace 5 días
+        Date fiveDaysAgo = calendar.getTime();
+
+        return workplanRepository.findByDateAfter(fiveDaysAgo);
+    } catch (Exception e) {
+        e.printStackTrace();
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener workplans recientes");
+    }
+}
+
 }
 

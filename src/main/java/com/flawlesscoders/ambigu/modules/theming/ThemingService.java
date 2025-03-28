@@ -2,20 +2,25 @@ package com.flawlesscoders.ambigu.modules.theming;
 
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.session.SessionInformation;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-
+import com.flawlesscoders.ambigu.modules.auth.AuthService;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class ThemingService {
+
+    private final AuthService authService;
     private final ThemingRepository themingRepository;
+
 
     public ResponseEntity<Theming> getTheming() {
         Theming theme = themingRepository.find();
@@ -96,6 +101,14 @@ public class ThemingService {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error updating logos");
+        }
+    }
+    public ResponseEntity<String> applyChanges(String currentToken) {
+        try {
+            authService.revokeAllTokens();
+            return ResponseEntity.ok("Tokens revocados y cambios aplicados.");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error al aplicar los cambios: " + e.getMessage());
         }
     }
 }

@@ -2,6 +2,8 @@ package com.flawlesscoders.ambigu.modules.order;
 
 import java.util.List;
 
+import java.util.Date;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -21,4 +23,9 @@ public interface OrderRepository extends MongoRepository<Order, String>{
     @Query("{'orderNumber': ?0}")
     Order findByOrderNumber(long orderNumber);
 
+    //FindByDateBetween
+    List<Order> findByDateBetween(java.util.Date from, java.util.Date to);
+
+    //CountByDate
+    long countByDate(Date date);
 }
