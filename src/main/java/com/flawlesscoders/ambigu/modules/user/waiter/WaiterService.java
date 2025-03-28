@@ -35,7 +35,7 @@ public class WaiterService {
             .phone(waiter.getPhone())
             .isLeader(waiter.isLeader())
             .status(waiter.isStatus())
-            .AvgRating(waiter.getAvgRating())
+            .avgRating(waiter.getAvgRating())
             .build();
     }
 
@@ -49,7 +49,7 @@ public class WaiterService {
             .avatarBase64(waiter.getAvatarBase64())
             .phone(waiter.getPhone())
             .isLeader(waiter.isLeader())
-            .AvgRating(waiter.getAvgRating())
+            .avgRating(waiter.getAvgRating())
             .build();
     }
 
