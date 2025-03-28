@@ -76,8 +76,18 @@ public class CategoryService {
      */
     public Category updateCategory(String id, Category updatedCategory) {
         Category existingCategory = getCategoryById(id);
-
-        existingCategory.setName(updatedCategory.getName());
+    
+        // Solo actualizar el nombre si se proporciona uno nuevo
+        if (updatedCategory.getName() != null && !updatedCategory.getName().isBlank()) {
+            existingCategory.setName(updatedCategory.getName());
+        }
+    
+        // Solo actualizar el estado usando isStatus() en lugar de getStatus()
+        existingCategory.setStatus(updatedCategory.isStatus());
+    
+        // No actualizamos la imagen aquí ya que tenemos un endpoint separado para eso
+        // existingCategory.setImageBase64(updatedCategory.getImageBase64());
+    
         return categoryRepository.save(existingCategory);
     }
 
