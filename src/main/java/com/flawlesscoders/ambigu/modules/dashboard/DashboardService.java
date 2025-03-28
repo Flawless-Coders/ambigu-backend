@@ -1,11 +1,16 @@
 package com.flawlesscoders.ambigu.modules.dashboard;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -189,5 +194,81 @@ public class DashboardService {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching orders percentage", e);
         }
+    }
+
+    public ResponseEntity<Map<String, Object>> buildOrdersChartData(){
+        try{
+            LocalDate today = LocalDate.now();
+            LocalDate end = today;
+            LocalDate start = end.minusDays(29);
+
+            //Last period
+            LocalDate previousEnd = start.minusDays(1);
+            LocalDate previousStart = previousEnd.minusDays(29);
+
+            Map<String, Integer> currentMap = getCountsWithRepository(start, end);
+            Map<String, Integer> previousMap = getCountsWithRepository(previousStart, previousEnd);
+
+            int total = currentMap.values().stream().mapToInt(Integer::intValue).sum();
+            int average = (int) currentMap.values().stream().mapToInt(Integer::intValue).average().orElse(0);
+            int previousAverage = (int) previousMap.values().stream().mapToInt(Integer::intValue).average().orElse(1); // evitar división por 0
+            double growth;
+            if (previousAverage == 0) {
+                growth = average > 0 ? 100.0 : 0.0;
+            } else {
+                growth = ((double) (average - previousAverage) / previousAverage) * 100;
+            }
+
+            List<String> labels = new ArrayList<>(currentMap.keySet());
+            List<Integer> dailyOrders = new ArrayList<>(currentMap.values());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("total", total);
+            response.put("average", average);
+            response.put("previousAverage", previousAverage);
+            response.put("growth", growth);
+            response.put("labels", labels);
+            response.put("dailyOrders", dailyOrders);
+            response.put("fromDate", start.toString()); // yyyy-MM-dd
+            response.put("toDate", end.toString());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("message", "Error al generar datos del gráfico");
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    private Map<String, Integer> getCountsWithRepository(LocalDate from, LocalDate to) {
+        Date fromDate = java.sql.Date.valueOf(from);
+        Date toDate = java.sql.Date.valueOf(to);
+
+        // Obtener todas las órdenes activas en el rango
+        List<Order> orders = orderRepository.findByDateBetween(fromDate, toDate).stream()
+                .filter(order -> !order.isDeleted())
+                .toList();
+
+        // Inicializar mapa con todos los días del rango (inicializados en 0)
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
+            String label = capitalize(date.format(DateTimeFormatter.ofPattern("MMM d", new Locale("es"))));
+            counts.put(label, 0);
+        }
+
+        // Agrupar en memoria
+        for (Order order : orders) {
+            LocalDate date = order.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            String label = capitalize(date.format(DateTimeFormatter.ofPattern("MMM d", new Locale("es"))));
+            counts.computeIfPresent(label, (k, v) -> v + 1);
+        }
+
+        return counts;
+    }
+
+    private String capitalize(String str) {
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 }

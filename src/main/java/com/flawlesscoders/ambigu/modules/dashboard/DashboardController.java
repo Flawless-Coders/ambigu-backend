@@ -31,4 +31,9 @@ public class DashboardController {
     public ResponseEntity<Map<String, Object>> getOrdersPercentage(){
         return dashboardService.getOrdersPercentage();
     }
+
+    @GetMapping("/orders-chart")
+    public ResponseEntity<Map<String, Object>> getOrdersChart(){
+        return dashboardService.buildOrdersChartData();
+    }
 }
