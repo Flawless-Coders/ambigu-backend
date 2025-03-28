@@ -86,7 +86,7 @@ public class MenuController {
         @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category list retrieved successfully")
         })
-        @GetMapping("/category")
+        @GetMapping("/public/category")
         public ResponseEntity<List<Category>> getCategoriesByMenu(){
             return ResponseEntity.ok(menuService.getCategoriesByMenu());
         }
@@ -207,7 +207,7 @@ public class MenuController {
             @ApiResponse(responseCode = "200", description = "Dish list retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Category not found")
         })
-        @GetMapping("/getDishesByCategory/{categoryId}")
+        @GetMapping("/public/getDishesByCategory/{categoryId}")
         public ResponseEntity<List<Dish>> getDishesByCategory(@PathVariable String categoryId){
         return ResponseEntity.ok(menuService.getDishesByCategory(categoryId));
         }
@@ -235,5 +235,10 @@ public class MenuController {
         @GetMapping("/isCurrentMenu")
         public ResponseEntity<Boolean> isCurrentMenu(){
             return ResponseEntity.ok(menuService.isCurrentMenu());
+        }
+
+        @GetMapping("/public/currentMenu")
+        public ResponseEntity<Menu> getCurrentMenu(){
+            return ResponseEntity.ok(menuService.getCurrentMenu());
         }
     }
