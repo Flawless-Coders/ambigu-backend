@@ -3,6 +3,8 @@ package com.flawlesscoders.ambigu.modules.dashboard;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -285,128 +288,150 @@ public class DashboardService {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
-    public ResponseEntity<Map<String, Object>> getOrdersByCategory(String range) {
-    try {
-        // 1. Configuración de fechas según el rango
-        LocalDate today = LocalDate.now();
-        LocalDate startDate;
-        
-        switch (range.toLowerCase()) {
-            case "last7days":
-                startDate = today.minusDays(6);
-                break;
-            case "last30days":
-            case "lastmonth":
-                startDate = today.minusDays(29);
-                break;
-            case "last6months":
-                startDate = today.minusMonths(5).withDayOfMonth(1);
-                break;
-            default:
-                return ResponseEntity.badRequest().body(
-                    Map.of("error", "Rango inválido. Use: last7days, last30days, lastmonth o last6months")
-                );
-        }
-
-        LocalDate endDate = today;
-
-        // 2. Conversión a fechas compatibles con MongoDB
-        Date from = Date.from(startDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-        Date to = Date.from(endDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant());
-
-        // 3. Obtener todas las categorías primero (para mapear ID → Nombre)
-        Map<String, String> categoryIdToName = categoryRepository.findAll()
-                .stream()
-                .filter(Category::isStatus) // Solo categorías activas
-                .collect(Collectors.toMap(
-                        Category::getId,
-                        Category::getName
-                ));
-
-        // 4. Obtener órdenes válidas en el rango
-        List<Order> orders = orderRepository.findByDateBetween(from, to)
-                .stream()
-                .filter(order -> !order.isDeleted())
-                .collect(Collectors.toList());
-
-        // 5. Obtener todos los platillos (activos)
-        Map<String, Dish> dishMap = dishRepository.findAll()
-                .stream()
-                .filter(Dish::isStatus) // Solo platillos activos
-                .collect(Collectors.toMap(Dish::getId, dish -> dish));
-
-        // 6. Obtener nombres de categorías únicas
-        Set<String> categoryNames = dishMap.values()
-                .stream()
+    public ResponseEntity<Map<String, Object>> getHourlySalesByCategory(LocalDate date) {
+        try {
+            // 1. Configurar rango del día
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            
+            // 2. Obtener órdenes del día
+            List<Order> orders = orderRepository.findByDateBetween(
+                Date.from(startOfDay.atZone(ZoneId.systemDefault()).toInstant()),
+                Date.from(endOfDay.atZone(ZoneId.systemDefault()).toInstant())
+            ).stream()
+             .filter(order -> !order.isDeleted())
+             .toList();
+    
+            // 3. Obtener categorías únicas
+            Set<String> categories = dishRepository.findAll().stream()
                 .map(Dish::getCategory)
-                .filter(categoryIdToName::containsKey) // Solo categorías existentes
-                .map(categoryIdToName::get)
                 .collect(Collectors.toSet());
-
-        // 7. Inicializar estructura de resultados
-        Map<String, Map<String, Double>> result = new LinkedHashMap<>();
-        
-        // Rellenar todos los meses en el rango
-        YearMonth current = YearMonth.from(startDate);
-        YearMonth end = YearMonth.from(endDate);
-
-        while (!current.isAfter(end)) {
-            String monthKey = formatMonth(current);
-            Map<String, Double> monthData = new HashMap<>();
-            categoryNames.forEach(name -> monthData.put(name, 0.0));
-            result.put(monthKey, monthData);
-            current = current.plusMonths(1);
-        }
-
-        // 8. Procesar órdenes
-        for (Order order : orders) {
-            LocalDate orderDate = order.getDate().toInstant()
+    
+            // 4. Inicializar estructura de datos horarios
+            Map<String, Map<String, Double>> hourlyData = new TreeMap<>();
+            for (int hour = 0; hour < 24; hour++) {
+                String hourKey = String.format("%02d:00", hour);
+                hourlyData.put(hourKey, new HashMap<>());
+                categories.forEach(cat -> hourlyData.get(hourKey).put(cat, 0.0));
+            }
+    
+            // 5. Procesar cada orden (adaptado a tu estructura con 'dishes')
+            for (Order order : orders) {
+                int hour = order.getDate().toInstant()
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-            String monthKey = formatMonth(YearMonth.from(orderDate));
-
-            for (OrderDishes item : order.getDishes()) {
-                Dish dish = dishMap.get(item.getDishId());
-                if (dish != null) {
-                    String categoryName = categoryIdToName.get(dish.getCategory());
-                    if (categoryName != null) {
-                        double subtotal = item.getUnitPrice() * item.getQuantity();
-                        result.get(monthKey).merge(
-                                categoryName,
-                                subtotal,
-                                Double::sum
+                    .getHour();
+                String hourKey = String.format("%02d:00", hour);
+                
+                for (OrderDishes dishItem : order.getDishes()) { // Cambiado a getDishes()
+                    Dish dish = dishRepository.findById(dishItem.getDishId()).orElse(null);
+                    if (dish != null) {
+                        double amount = dishItem.getQuantity() * dishItem.getUnitPrice();
+                        hourlyData.get(hourKey).merge(
+                            dish.getCategory(),
+                            amount,
+                            Double::sum
                         );
                     }
                 }
             }
+    
+            // 6. Calcular totales por hora
+            Map<String, Double> hourlyTotals = new LinkedHashMap<>();
+            hourlyData.forEach((hour, categoriesMap) -> {
+                double total = categoriesMap.values().stream().mapToDouble(Double::doubleValue).sum();
+                hourlyTotals.put(hour, total);
+            });
+
+            Map<String, String> categoryNames = categoryRepository.findAll().stream()
+            .filter(Category::isStatus)
+            .collect(Collectors.toMap(
+                Category::getId,
+                Category::getName
+            ));
+    
+            // 7. Preparar respuesta
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("date", date.toString());
+            response.put("categories", categoryNames);
+            response.put("hourlyData", hourlyData);
+            response.put("hourlyTotals", hourlyTotals);
+    
+            return ResponseEntity.ok(response);
+    
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("message", "Error al generar ventas por hora");
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
-
-        // 9. Construir respuesta
-        Map<String, Object> response = new HashMap<>();
-        response.put("data", result);
-        response.put("categories", new ArrayList<>(categoryNames)); // Convertir a List para orden consistente
-        response.put("range", range);
-        response.put("fromDate", startDate.toString());
-        response.put("toDate", endDate.toString());
-
-        return ResponseEntity.ok(response);
-
-    } catch (Exception e) {
-        e.printStackTrace(); // Para depuración
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of(
-                    "error", "Error al generar reporte",
-                    "details", e.getMessage()
-                ));
     }
-}
 
-private String formatMonth(YearMonth ym) {
-    String monthName = ym.getMonth().getDisplayName(
-        TextStyle.SHORT, 
-        new Locale("es", "ES")
-    );
-    return capitalize(monthName) + " " + ym.getYear();
-}
-
+    //Most popular foods of the last 30 days
+    public ResponseEntity<Map<String, Object>> getMostPopularFoods() {
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDate start = today.minusDays(30);
+            LocalDate end = today;
+    
+            List<Order> orders = orderRepository.findByDateBetween(
+                Date.from(start.atStartOfDay(ZoneId.systemDefault()).toInstant()),
+                Date.from(end.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant())
+            ).stream()
+             .filter(order -> !order.isDeleted())
+             .toList();
+    
+            Map<String, Integer> foodCounts = new HashMap<>();
+    
+            for (Order order : orders) {
+                for (OrderDishes dishItem : order.getDishes()) {
+                    String dishId = dishItem.getDishId();
+                    if(dishId == null || dishId.isEmpty()) {
+                        continue; // Skip if dishId is null or empty
+                    }
+                    foodCounts.put(dishId, foodCounts.getOrDefault(dishId, 0) + 1);
+                }
+            }
+    
+            List<Map.Entry<String, Integer>> sorted = foodCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .toList();
+    
+            List<Map<String, Object>> topFoods = new ArrayList<>();
+            int othersCount = 0;
+    
+            // Primero, calcula el total de todos los platos
+            int totalCount = sorted.stream()
+                .mapToInt(Map.Entry::getValue)
+                .sum();
+    
+            // Procesa los 5 principales y suma el resto a othersCount
+            for (int i = 0; i < sorted.size(); i++) {
+                Map.Entry<String, Integer> entry = sorted.get(i);
+                if (i < 5) {
+                    Dish dish = dishRepository.findById(entry.getKey()).orElse(null);
+                    if (dish != null) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("name", dish.getName());
+                        map.put("count", entry.getValue());
+                        topFoods.add(map);
+                    } else {
+                        othersCount += entry.getValue();
+                    }
+                } else {
+                    // Todos los elementos después del índice 4 (los 5 primeros) van a "others"
+                    othersCount += entry.getValue();
+                }
+            }
+    
+            Map<String, Object> response = new HashMap<>();
+            response.put("topFoods", topFoods);
+            response.put("othersCount", othersCount);
+            
+            return ResponseEntity.ok(response);
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching most popular foods", e);
+        }
+    }
 }
