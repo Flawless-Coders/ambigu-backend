@@ -20,6 +20,22 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final DishRepository dishRepository;
 
+    private void validateCategoryName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la categoría no puede estar vacío.");
+        }
+
+        name = name.trim();
+
+        List<Category> existingCategories = categoryRepository.findAll();
+        for (Category existing : existingCategories) {
+            if (existing.getName().trim().equalsIgnoreCase(name.trim())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "Ya existe una categoría con ese nombre.");
+            }
+        }
+    }
+
     /**
      * Retrieves all categories.
      * @return A list of all categories.
@@ -46,13 +62,11 @@ public class CategoryService {
      * @throws ResponseStatusException if the data is invalid.
      */
     public Category saveCategory(String name, MultipartFile image) {
-        if (name == null || name.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la categoría no puede estar vacío.");
-        }
+        validateCategoryName(name);
     
         // Crear una nueva categoría
         Category category = new Category();
-        category.setName(name);
+        category.setName(name.trim());
         category.setStatus(true);
     
         if (image != null && !image.isEmpty()) {
@@ -77,16 +91,12 @@ public class CategoryService {
     public Category updateCategory(String id, Category updatedCategory) {
         Category existingCategory = getCategoryById(id);
     
-        // Solo actualizar el nombre si se proporciona uno nuevo
         if (updatedCategory.getName() != null && !updatedCategory.getName().isBlank()) {
-            existingCategory.setName(updatedCategory.getName());
+            validateCategoryName(updatedCategory.getName());
+            existingCategory.setName(updatedCategory.getName().trim());
         }
     
-        // Solo actualizar el estado usando isStatus() en lugar de getStatus()
         existingCategory.setStatus(updatedCategory.isStatus());
-    
-        // No actualizamos la imagen aquí ya que tenemos un endpoint separado para eso
-        // existingCategory.setImageBase64(updatedCategory.getImageBase64());
     
         return categoryRepository.save(existingCategory);
     }
