@@ -80,6 +80,7 @@ public class ModifyRequestService {
                     .waiter(found.getWaiter())
                     .table((found.getTable()))
                     .tableName(found.getTableName())
+                    .workplan((found.getWorkplan()))
                     .orderNumber((found.getOrderNumber()))
                     .deletedRequest(false)
                     .build();
