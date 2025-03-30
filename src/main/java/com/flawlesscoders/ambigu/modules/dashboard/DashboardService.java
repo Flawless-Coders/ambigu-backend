@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -432,6 +433,89 @@ public class DashboardService {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching most popular foods", e);
+        }
+    }
+
+    //Most popular categories of the last 30 days
+    public ResponseEntity<Map<String, Object>> getMostPopularCategories() {
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDate startDate = today.minusDays(30);
+            
+            // 1. Obtener órdenes del período
+            List<Order> orders = orderRepository.findByDateBetweenAndDeletedFalse(
+                Date.from(startDate.atStartOfDay(ZoneId.systemDefault()).toInstant()),
+                Date.from(today.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant())
+            );
+    
+            // 2. Extraer todos los dishIds únicos
+            Set<String> dishIds = orders.stream()
+                .flatMap(order -> order.getDishes().stream())
+                .map(OrderDishes::getDishId)
+                .filter(dishId -> dishId != null && !dishId.isEmpty())
+                .collect(Collectors.toSet());
+    
+            // 3. Obtener mapeo de platillo a categoría {dishId → categoryId}
+            Map<String, String> dishToCategory = dishRepository.findAllById(dishIds).stream()
+                .filter(dish -> dish.getCategory() != null)
+                .collect(Collectors.toMap(
+                    Dish::getId,
+                    Dish::getCategory
+                ));
+    
+            // 4. Contar ventas por categoría
+            Map<String, Integer> categorySales = new HashMap<>();
+            
+            orders.forEach(order -> {
+                order.getDishes().forEach(dishItem -> {
+                    String categoryId = dishToCategory.get(dishItem.getDishId());
+                    if (categoryId != null) {
+                        categorySales.merge(categoryId, 1, Integer::sum);
+                    }
+                });
+            });
+    
+            // 5. Obtener nombres de categorías
+            Map<String, String> categoryNames = categoryRepository.findAllById(categorySales.keySet()).stream()
+                .collect(Collectors.toMap(
+                    Category::getId,
+                    Category::getName
+                ));
+    
+            // 6. Ordenar por cantidad descendente
+            List<Map.Entry<String, Integer>> sortedCategories = categorySales.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .toList();
+    
+            // 7. Preparar respuesta (top 5 + others)
+            List<Map<String, Object>> topCategories = new ArrayList<>();
+            int othersCount = 0;
+    
+            for (int i = 0; i < sortedCategories.size(); i++) {
+                Map.Entry<String, Integer> entry = sortedCategories.get(i);
+                if (i < 5) {
+                    Map<String, Object> categoryData = new HashMap<>();
+                    categoryData.put("name", categoryNames.get(entry.getKey()));
+                    categoryData.put("count", entry.getValue());
+                    topCategories.add(categoryData);
+                } else {
+                    othersCount += entry.getValue();
+                }
+            }
+    
+            Map<String, Object> response = new HashMap<>();
+            response.put("topCategories", topCategories);
+            response.put("othersCount", othersCount);
+            
+            return ResponseEntity.ok(response);
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Error al obtener conteo de ventas por categoría", 
+                e
+            );
         }
     }
 }

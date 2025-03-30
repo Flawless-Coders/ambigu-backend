@@ -52,5 +52,11 @@ public class DashboardController {
         return dashboardService.getMostPopularFoods();
     }
 
+    //Most popular categories of the last 30 days
+    @GetMapping("/most-popular-categories")
+    public ResponseEntity<Map<String, Object>> getMostPopularCategories() {
+        return dashboardService.getMostPopularCategories();
+    }
+
 
 }

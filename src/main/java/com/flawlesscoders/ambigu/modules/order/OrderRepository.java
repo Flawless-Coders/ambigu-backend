@@ -1,7 +1,7 @@
 package com.flawlesscoders.ambigu.modules.order;
 
 import java.util.List;
-
+import java.util.Map;
 import java.util.Date;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -28,4 +28,8 @@ public interface OrderRepository extends MongoRepository<Order, String>{
 
     //CountByDate
     long countByDate(Date date);
+
+    //Find by date between and deleted false
+    List<Order> findByDateBetweenAndDeletedFalse(Date from, Date to);
+
 }
