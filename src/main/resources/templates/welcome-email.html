@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Bienvenido a Ambigú</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .logo { max-width: 150px; }
+        .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+        .button { 
+            display: inline-block; 
+            padding: 10px 20px; 
+            background-color: #4CAF50; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img class="logo" src="cid:logo" alt="Ambigu Logo" />
+            <h1>¡Bienvenido a Ambigu!</h1>
+        </div>
+        
+        <p>Hola <span th:text="${name}"></span> <span th:text="${lastName}"></span>,</p>
+        
+        <p>Tu cuenta ha sido creada exitosamente.</p>
+        
+        <p>Tus credenciales de acceso son:</p>
+        <ul>
+            <li>Email: <strong th:text="${email}"></strong></li>
+            <li>Contraseña temporal: <strong th:text="${password}"></strong></li>
+        </ul>
+        
+        <p>Te recomendamos cambiar tu contraseña después del primer inicio de sesión.</p>
+        
+        <p>
+            <a class="button" th:href="${loginUrl}">Iniciar Sesión</a>
+        </p>
+        
+        <div class="footer">
+            <p>© 2025 Ambigu. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>

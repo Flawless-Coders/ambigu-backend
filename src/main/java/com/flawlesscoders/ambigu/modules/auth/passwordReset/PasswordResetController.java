@@ -30,6 +30,10 @@ public class PasswordResetController {
 
     @PostMapping("/validate-reset")
     public ResponseEntity<?> validateToken(@RequestBody Map<String, String> request) {
+        System.out.println(request.get("token"));
+        if (request.get("token") == null || request.get("token").isEmpty()) {
+            return ResponseEntity.badRequest().body("Token no puede estar vacío");
+        }
         return passwordResetService.validateToken(request.get("token")) ?
             ResponseEntity.ok("Token valido") :
             ResponseEntity.badRequest().build();
