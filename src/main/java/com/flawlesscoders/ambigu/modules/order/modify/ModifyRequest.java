@@ -37,6 +37,7 @@ public class ModifyRequest {
     private long orderNumber;
     private String table;
     private String tableName;
+    private String workplan;
     private boolean toDelete;
     private boolean deletedRequest;
 }
