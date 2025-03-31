@@ -34,7 +34,12 @@ public class EmailService {
             helper.setText(htmlContent, true);
 
             helper.addInline("logo", new ClassPathResource("static/images/ambigu-icon.png"));
-            helper.addInline("clock", new ClassPathResource("static/images/clock.png"));
+
+            if ("recover-password-email".equals(templateName)) {
+                helper.addInline("clock", new ClassPathResource("static/images/clock.png"));
+            } else if ("welcome-email".equals(templateName)) {
+                helper.addInline("info", new ClassPathResource("static/images/info-circle.png"));
+            }
             
             emailSender.send(message);
         } catch (MessagingException e) {
