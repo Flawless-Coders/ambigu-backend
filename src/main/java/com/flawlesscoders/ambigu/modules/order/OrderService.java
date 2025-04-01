@@ -19,7 +19,9 @@ import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequestRepository;
 import com.flawlesscoders.ambigu.modules.table.Table;
 import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
 import com.flawlesscoders.ambigu.modules.table.TableRepository;
+import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
 import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
+import com.flawlesscoders.ambigu.modules.workplan.Workplan;
 import com.flawlesscoders.ambigu.modules.workplan.WorkplanService;
 
 import lombok.AllArgsConstructor;
@@ -33,6 +35,7 @@ public class OrderService {
     private final ModifyRequestRepository requestRepository;
     private final TableRepository tableRepository;
     private final WorkplanService workplanService;
+    private final WaiterRepository waiterRepository;
     private final DishRepository dishRepository;
 
     /**
@@ -254,13 +257,18 @@ public class OrderService {
     }
 
     public List<Order> getFinalizedOrders(String waiterEmail) {
+        Waiter waiter = waiterRepository.findByEmail(waiterEmail)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+
         // Obtener las mesas asignadas al mesero
-        List<Table> tables = workplanService.getTablesInChargeByWaiterInWorkplan(waiterEmail);
+        List<Table> tables = workplanService.getTablesByWaiterInWorkplan(waiterEmail);
+        String workplan = workplanService.getIdWorkplanPresent();
+
         List<Order> orders = new ArrayList<>();
     
         // Recorrer las mesas y obtener las órdenes finalizadas de cada una
         for (Table table : tables) {
-            List<Order> tableOrders = repository.getFinalizedOrders(table.getId());
+            List<Order> tableOrders = repository.getFinalizedOrders(table.getId(), waiter.getName() + " " + waiter.getLastname_p() + " " + waiter.getLastname_m(), workplan);
             if (tableOrders != null && !tableOrders.isEmpty()) { // Verifica si la lista de órdenes no es null ni está vacía
                 orders.addAll(tableOrders); // Agrega todas las órdenes de la mesa a la lista principal
             }
@@ -286,7 +294,7 @@ public class OrderService {
                 Dish orderedDish = new Dish();
                 orderedDish = dishRepository.findById(orderDishes.getDishId()).orElse(null);
                 if(orderedDish != null && orderedDish.getImageBase64() != null){
-                    order.getDishes().get(counter).setImageBase64(orderedDish.getImageBase64());
+                    orderDishes.setImageBase64(orderedDish.getImageBase64());
                 }
 
                 boolean dishExists = false; 

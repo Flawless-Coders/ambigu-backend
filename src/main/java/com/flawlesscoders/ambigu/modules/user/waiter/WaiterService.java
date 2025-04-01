@@ -2,8 +2,11 @@ package com.flawlesscoders.ambigu.modules.user.waiter;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.flawlesscoders.ambigu.modules.user.base.Role;
 import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterDTO;
 import com.flawlesscoders.ambigu.modules.user.waiter.DTO.GetWaiterWAvatarDTO;
+import com.flawlesscoders.ambigu.utils.email.EmailService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +28,10 @@ public class WaiterService {
 
     private final WaiterRepository waiterRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+
+    @Value("${frontend.url}")
+    private String url;
 
     private GetWaiterDTO toGetWaiterDTO(Waiter waiter) {
         return GetWaiterDTO.builder()
@@ -89,16 +97,36 @@ public class WaiterService {
         if(waiterRepository.findByEmail(waiter.getEmail()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already in use");
         }
+        String plainPassword= null;
         if(waiter.getPassword() == null) {
-            String password = waiter.getName().substring(0, 1).toUpperCase() + waiter.getLastname_p().substring(0, 1).toUpperCase() + waiter.getLastname_m().substring(0, 1).toUpperCase() + waiter.getEmail().substring(0, 1).toUpperCase();
-            waiter.setPassword(password);
+            plainPassword = waiter.getName().substring(0, 1).toUpperCase() + waiter.getLastname_p().substring(0, 1).toUpperCase() + waiter.getLastname_m().substring(0, 1).toUpperCase() + waiter.getEmail().substring(0, 1).toUpperCase();
+            waiter.setPassword(plainPassword);
         }
         waiter.setRole(Role.WAITER);
         waiter.setStatus(true);
         waiter.setLeader(false);
         waiter.setPassword(passwordEncoder.encode(waiter.getPassword()));
+
+        sendWelcomeEmail(waiter, plainPassword);
+
         Waiter savedWaiter = waiterRepository.save(waiter);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedWaiter);
+    }
+
+    private void sendWelcomeEmail(Waiter waiter, String plainPassword) {
+        Map<String,Object> templateModel = new HashMap<>();
+        templateModel.put("name", waiter.getName());
+        templateModel.put("lastName", waiter.getLastname_p());
+        templateModel.put("email", waiter.getEmail());
+        templateModel.put("password", plainPassword);
+        templateModel.put("loginUrl", url);
+
+        emailService.sendHtmlEmail(
+            waiter.getEmail(),
+            "Bienvenido a Ambigú - Cuenta Creada",
+            "welcome-email",
+            templateModel
+        );
     }
 
     public ResponseEntity<Void> updateWaiter(@Valid Waiter waiter) {

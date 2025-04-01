@@ -1,17 +1,26 @@
 package com.flawlesscoders.ambigu.modules.dashboard;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -19,9 +28,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.flawlesscoders.ambigu.modules.category.Category;
+import com.flawlesscoders.ambigu.modules.category.CategoryRepository;
+import com.flawlesscoders.ambigu.modules.dish.Dish;
+import com.flawlesscoders.ambigu.modules.dish.DishRepository;
 import com.flawlesscoders.ambigu.modules.order.Order;
+import com.flawlesscoders.ambigu.modules.order.OrderDishes;
 import com.flawlesscoders.ambigu.modules.order.OrderRepository;
 import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
+import java.util.function.Function;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +45,8 @@ import lombok.RequiredArgsConstructor;
 public class DashboardService {
     private final OrderRepository orderRepository;
     private final WaiterRepository waiterRepository;
+    private final CategoryRepository categoryRepository;
+    private final DishRepository dishRepository;
 
     public ResponseEntity<List<Map<String, Object>>> getTop5WaitersByRating() {
         try {
@@ -270,5 +287,235 @@ public class DashboardService {
 
     private String capitalize(String str) {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
+    }
+
+    public ResponseEntity<Map<String, Object>> getHourlySalesByCategory(LocalDate date) {
+        try {
+            // 1. Configurar rango del día
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            
+            // 2. Obtener órdenes del día
+            List<Order> orders = orderRepository.findByDateBetween(
+                Date.from(startOfDay.atZone(ZoneId.systemDefault()).toInstant()),
+                Date.from(endOfDay.atZone(ZoneId.systemDefault()).toInstant())
+            ).stream()
+             .filter(order -> !order.isDeleted())
+             .toList();
+    
+            // 3. Obtener categorías únicas
+            Set<String> categories = dishRepository.findAll().stream()
+                .map(Dish::getCategory)
+                .collect(Collectors.toSet());
+    
+            // 4. Inicializar estructura de datos horarios
+            Map<String, Map<String, Double>> hourlyData = new TreeMap<>();
+            for (int hour = 0; hour < 24; hour++) {
+                String hourKey = String.format("%02d:00", hour);
+                hourlyData.put(hourKey, new HashMap<>());
+                categories.forEach(cat -> hourlyData.get(hourKey).put(cat, 0.0));
+            }
+    
+            // 5. Procesar cada orden (adaptado a tu estructura con 'dishes')
+            for (Order order : orders) {
+                int hour = order.getDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .getHour();
+                String hourKey = String.format("%02d:00", hour);
+                
+                for (OrderDishes dishItem : order.getDishes()) { // Cambiado a getDishes()
+                    Dish dish = dishRepository.findById(dishItem.getDishId()).orElse(null);
+                    if (dish != null) {
+                        double amount = dishItem.getQuantity() * dishItem.getUnitPrice();
+                        hourlyData.get(hourKey).merge(
+                            dish.getCategory(),
+                            amount,
+                            Double::sum
+                        );
+                    }
+                }
+            }
+    
+            // 6. Calcular totales por hora
+            Map<String, Double> hourlyTotals = new LinkedHashMap<>();
+            hourlyData.forEach((hour, categoriesMap) -> {
+                double total = categoriesMap.values().stream().mapToDouble(Double::doubleValue).sum();
+                hourlyTotals.put(hour, total);
+            });
+
+            Map<String, String> categoryNames = categoryRepository.findAll().stream()
+            .filter(Category::isStatus)
+            .collect(Collectors.toMap(
+                Category::getId,
+                Category::getName
+            ));
+    
+            // 7. Preparar respuesta
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("date", date.toString());
+            response.put("categories", categoryNames);
+            response.put("hourlyData", hourlyData);
+            response.put("hourlyTotals", hourlyTotals);
+    
+            return ResponseEntity.ok(response);
+    
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("message", "Error al generar ventas por hora");
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    //Most popular foods of the last 30 days
+    public ResponseEntity<Map<String, Object>> getMostPopularFoods() {
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDate start = today.minusDays(30);
+            LocalDate end = today;
+    
+            List<Order> orders = orderRepository.findByDateBetween(
+                Date.from(start.atStartOfDay(ZoneId.systemDefault()).toInstant()),
+                Date.from(end.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant())
+            ).stream()
+             .filter(order -> !order.isDeleted())
+             .toList();
+    
+            Map<String, Integer> foodCounts = new HashMap<>();
+    
+            for (Order order : orders) {
+                for (OrderDishes dishItem : order.getDishes()) {
+                    String dishId = dishItem.getDishId();
+                    if(dishId == null || dishId.isEmpty()) {
+                        continue; // Skip if dishId is null or empty
+                    }
+                    foodCounts.put(dishId, foodCounts.getOrDefault(dishId, 0) + 1);
+                }
+            }
+    
+            List<Map.Entry<String, Integer>> sorted = foodCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .toList();
+    
+            List<Map<String, Object>> topFoods = new ArrayList<>();
+            int othersCount = 0;
+    
+            // Primero, calcula el total de todos los platos
+            int totalCount = sorted.stream()
+                .mapToInt(Map.Entry::getValue)
+                .sum();
+    
+            // Procesa los 5 principales y suma el resto a othersCount
+            for (int i = 0; i < sorted.size(); i++) {
+                Map.Entry<String, Integer> entry = sorted.get(i);
+                if (i < 5) {
+                    Dish dish = dishRepository.findById(entry.getKey()).orElse(null);
+                    if (dish != null) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("name", dish.getName());
+                        map.put("count", entry.getValue());
+                        topFoods.add(map);
+                    } else {
+                        othersCount += entry.getValue();
+                    }
+                } else {
+                    // Todos los elementos después del índice 4 (los 5 primeros) van a "others"
+                    othersCount += entry.getValue();
+                }
+            }
+    
+            Map<String, Object> response = new HashMap<>();
+            response.put("topFoods", topFoods);
+            response.put("othersCount", othersCount);
+            
+            return ResponseEntity.ok(response);
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching most popular foods", e);
+        }
+    }
+
+    //Most popular categories of the last 30 days
+    public ResponseEntity<Map<String, Object>> getMostPopularCategories() {
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDate startDate = today.minusDays(30);
+            
+            // 1. Obtener órdenes del período
+            List<Order> orders = orderRepository.findByDateBetweenAndDeletedFalse(
+                Date.from(startDate.atStartOfDay(ZoneId.systemDefault()).toInstant()),
+                Date.from(today.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant())
+            );
+    
+            // 2. Extraer todos los dishIds únicos
+            Set<String> dishIds = orders.stream()
+                .flatMap(order -> order.getDishes().stream())
+                .map(OrderDishes::getDishId)
+                .filter(dishId -> dishId != null && !dishId.isEmpty())
+                .collect(Collectors.toSet());
+    
+            // 3. Obtener mapeo de platillo a categoría {dishId → categoryId}
+            Map<String, String> dishToCategory = dishRepository.findAllById(dishIds).stream()
+                .filter(dish -> dish.getCategory() != null)
+                .collect(Collectors.toMap(
+                    Dish::getId,
+                    Dish::getCategory
+                ));
+    
+            // 4. Contar ventas por categoría
+            Map<String, Integer> categorySales = new HashMap<>();
+            
+            orders.forEach(order -> {
+                order.getDishes().forEach(dishItem -> {
+                    String categoryId = dishToCategory.get(dishItem.getDishId());
+                    if (categoryId != null) {
+                        categorySales.merge(categoryId, 1, Integer::sum);
+                    }
+                });
+            });
+    
+            // 5. Obtener nombres de categorías
+            Map<String, String> categoryNames = categoryRepository.findAllById(categorySales.keySet()).stream()
+                .collect(Collectors.toMap(
+                    Category::getId,
+                    Category::getName
+                ));
+    
+            // 6. Ordenar por cantidad descendente
+            List<Map.Entry<String, Integer>> sortedCategories = categorySales.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .toList();
+    
+            // 7. Preparar respuesta (top 5 + others)
+            List<Map<String, Object>> topCategories = new ArrayList<>();
+            int othersCount = 0;
+    
+            for (int i = 0; i < sortedCategories.size(); i++) {
+                Map.Entry<String, Integer> entry = sortedCategories.get(i);
+                if (i < 5) {
+                    Map<String, Object> categoryData = new HashMap<>();
+                    categoryData.put("name", categoryNames.get(entry.getKey()));
+                    categoryData.put("count", entry.getValue());
+                    topCategories.add(categoryData);
+                } else {
+                    othersCount += entry.getValue();
+                }
+            }
+    
+            Map<String, Object> response = new HashMap<>();
+            response.put("topCategories", topCategories);
+            response.put("othersCount", othersCount);
+            
+            return ResponseEntity.ok(response);
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Error al obtener conteo de ventas por categoría", 
+                e
+            );
+        }
     }
 }

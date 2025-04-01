@@ -6,7 +6,11 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.flawlesscoders.ambigu.modules.dish.Dish;
+import com.flawlesscoders.ambigu.modules.dish.DishRepository;
 import com.flawlesscoders.ambigu.modules.order.Order;
+import com.flawlesscoders.ambigu.modules.order.OrderDishes;
 import com.flawlesscoders.ambigu.modules.order.OrderRepository;
 
 import lombok.AllArgsConstructor;
@@ -16,6 +20,7 @@ import lombok.AllArgsConstructor;
 public class ModifyRequestService {
     private final ModifyRequestRepository requestRepository;
     private final OrderRepository repository;
+    private final DishRepository dishRepository;
 
     /**
      * Retrieves all modify requests.
@@ -42,9 +47,18 @@ public class ModifyRequestService {
     public ModifyRequest sendModifyRequest (ModifyRequest modifyRequest){
         try {
             float total = 0;
+            int counter=0;
             if (repository.existsById(modifyRequest.getOrderId())) {
                 for(int i = 0; i< modifyRequest.getModifiedDishes().size(); i++){
                     total += modifyRequest.getModifiedDishes().get(i).getUnitPrice() * modifyRequest.getModifiedDishes().get(i).getQuantity();
+                }
+                for(OrderDishes dish : modifyRequest.getModifiedDishes()){
+                    Dish currentDish = new Dish();
+                    currentDish = dishRepository.findById(dish.getDishId()).orElse(null);
+                    if(currentDish != null && currentDish.getImageBase64()!=null){
+                        modifyRequest.getModifiedDishes().get(counter).setImageBase64(currentDish.getImageBase64());
+                    }
+                    counter++;
                 }
 
                 DecimalFormat df = new DecimalFormat("#.##");
@@ -80,6 +94,7 @@ public class ModifyRequestService {
                     .waiter(found.getWaiter())
                     .table((found.getTable()))
                     .tableName(found.getTableName())
+                    .workplan((found.getWorkplan()))
                     .orderNumber((found.getOrderNumber()))
                     .deletedRequest(false)
                     .build();

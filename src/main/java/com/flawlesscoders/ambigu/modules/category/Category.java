@@ -24,7 +24,7 @@ public class Category {
     @Schema(description = "Name of the category.")
     private String name;
 
-    @Schema(description = "Base64 representation of the category image.", nullable = true)
+    @Schema(description = "Base64 representation of the category image.")
     private String imageBase64;
 
     @Schema(description = "Indicates whether a category is enabled or disabled.")
