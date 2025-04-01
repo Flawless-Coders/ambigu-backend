@@ -2,11 +2,13 @@ package com.flawlesscoders.ambigu.modules.order;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.flawlesscoders.ambigu.modules.order.dto.OrderFeedbackDTO;
 
@@ -20,7 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 @RestController
-@RequestMapping("/order")
+@RequestMapping("api/order")
 @AllArgsConstructor
 public class OrderController {
     private final OrderService service;
@@ -66,7 +68,7 @@ public class OrderController {
         @ApiResponse(responseCode = "404", description = "Order not found")
     })
     @PutMapping("/finalize/{id}")
-    public ResponseEntity<Order> finalizeOrder(@PathVariable String id){
+    public ResponseEntity<String> finalizeOrder(@PathVariable String id){
         return ResponseEntity.ok(service.finalizeOrder(id));
     }
 
@@ -79,15 +81,31 @@ public class OrderController {
     
     @Operation(summary = "Get current orders", description = "Returns a list of all current orders")
     @ApiResponse(responseCode = "200", description = "List retrieved successfully")
-    @GetMapping("/currentOrders")
-    public ResponseEntity<List<Order>> getCurrentOrders(){
-        return ResponseEntity.ok(service.getCurrentOrders());
+    @GetMapping("/currentOrders/{waiterEmail}")
+    public ResponseEntity<List<Order>> getCurrentOrders(@PathVariable String waiterEmail){
+        return ResponseEntity.ok(service.getCurrentOrders(waiterEmail));
     }
 
     @Operation(summary = "Get finalized orders", description = "Returns a list of all finalized orders")
     @ApiResponse(responseCode = "200", description = "List retrieved successfully")
-    @GetMapping("/finalizedOrders")
-    public ResponseEntity<List<Order>> getFinalizedOrders(){
-        return ResponseEntity.ok(service.getFinalizedOrders());
+    @GetMapping("/finalizedOrders/{waiterEmail}")
+    public ResponseEntity<List<Order>> getFinalizedOrders(@PathVariable String waiterEmail){
+        return ResponseEntity.ok(service.getFinalizedOrders(waiterEmail));
     }
+
+    @PutMapping("/addDishes/{orderId}")
+    public ResponseEntity<Order> addDishes(@PathVariable String orderId, @RequestBody List<OrderDishes> dishes){
+        return ResponseEntity.ok(service.addDishes(dishes, orderId));
+    }
+
+    @GetMapping("/currentTableOrder/{tableName}")
+    public ResponseEntity<Order> getCurrentTableOrder(@PathVariable String tableName){
+        return ResponseEntity.ok(service.getCurrentTableOrder(tableName));
+    }
+
+    @GetMapping("/public/{orderNumber}")
+    public ResponseEntity<Order> getOrderByOrderNumber(@PathVariable long orderNumber) {
+        return ResponseEntity.ok(service.findByOrderNumber(orderNumber));
+    }
+
 }

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="language" content="es">
+    <title>Bienvenido a Ambigú</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .logo { max-width: 150px; }
+        .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+        .button { 
+            display: inline-block; 
+            padding: 10px 20px; 
+            background-color: #4CAF50; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+        }
+        .alert {
+            background-color: #f8f8f8;
+            border-left: 4px solid #4CAF50;
+            padding: 12px;
+            margin: 20px 0;
+        }
+        .social-icons {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .social-icons img {
+            width: 30px;
+            margin: 0 10px;
+        }
+        .credentials {
+            background-color: #f8f8f8;
+            border-left: 4px solid #4CAF50;
+            padding: 12px 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="cid:logo" alt="Ambigú Icon" style="width: 50px; vertical-align: middle; margin-bottom: 10px;" />
+            <h1>¡Bienvenido a Ambigú!</h1>
+        </div>
+        
+        <p>Hola <span th:text="${name}">Usuario</span> <span th:text="${lastName}"></span>,</p>
+        
+        <p>Tu cuenta ha sido creada exitosamente en nuestra plataforma.</p>
+        
+        <div class="credentials">
+            <h3>Tus credenciales de acceso</h3>
+            <p><strong>Email:</strong> <span th:text="${email}">usuario@ejemplo.com</span></p>
+            <p><strong>Contraseña temporal:</strong> <span th:text="${password}">********</span></p>
+            <p><img src="cid:info" alt="Información" style="width: 20px; vertical-align: middle; margin-right: 10px;" />
+            Te recomendamos cambiar tu contraseña después del primer inicio de sesión.</p>
+        </div>
+        
+        <p style="text-align: center; margin: 30px 0;">
+            <a class="button" th:href="${loginUrl}">Iniciar Sesión</a>
+        </p>
+    
+        <div class="footer">
+            <p>© 2025 Ambigú. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>

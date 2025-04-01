@@ -23,10 +23,6 @@ public class Waiter extends User {
     @NotNull(message = "El estatus de lider es requerido")
     private boolean isLeader;
 
-    @Schema(description = "Shift that the waiter is working", example = "MORNING, AFTERNOON")
-    @NotNull(message = "El turno es requerido")
-    private Shift shift;
-
     @Schema(description = "Average rating of the waiter")
-    private int AvgRating;
+    private float avgRating;
 }

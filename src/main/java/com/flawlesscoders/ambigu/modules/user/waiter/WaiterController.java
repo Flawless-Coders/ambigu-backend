@@ -3,7 +3,6 @@ package com.flawlesscoders.ambigu.modules.user.waiter;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("api/waiters")
@@ -86,13 +86,11 @@ public class WaiterController {
         @ApiResponse(responseCode = "201", description = "Waiter created"),
         @ApiResponse(responseCode = "400", description = "Invalid waiter"),
     })
-    @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<Waiter> createWaiter(
-        @RequestPart("waiter") @Validated Waiter waiter,
-        @RequestPart("avatar") MultipartFile avatar) {
-
-        return waiterService.createWaiter(waiter, avatar);     
+    @PostMapping
+    public ResponseEntity<Waiter> createWaiter(@RequestBody @Valid Waiter waiter) {
+        return waiterService.createWaiter(waiter);
     }
+
 
     //UPDATE A WAITER
     @Operation(summary = "Updates a waiter")
@@ -101,7 +99,7 @@ public class WaiterController {
         @ApiResponse(responseCode = "400", description = "Invalid waiter"),
         @ApiResponse(responseCode = "404", description = "Waiter not found"),
     })
-    @PutMapping("/update")
+    @PutMapping()
     public ResponseEntity<Void> updateWaiter(
         @RequestBody 
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -138,7 +136,7 @@ public class WaiterController {
         @ApiResponse(responseCode = "200", description = "Status changed"),
         @ApiResponse(responseCode = "404", description = "Waiter not found"),
     })
-    @PutMapping("/status/{id}")
+    @PatchMapping("/status/{id}")
     public ResponseEntity<Void> changeWaiterStatus(
         @Parameter(description = "Waiter's id", required = true)
         @PathVariable String id ) {
@@ -154,5 +152,24 @@ public class WaiterController {
     public ResponseEntity<List<GetWaiterWAvatarDTO>> getWaitersWAvatar(){
         return waiterService.getWaitersWAvatar();
     }
+
+    //CHANGE LEADER STATUS OF A WAITER
+    @Operation(summary = "Changes the leader status of a waiter")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Leader status changed"),
+        @ApiResponse(responseCode = "404", description = "Waiter not found"),
+    })
+    @PatchMapping("/leader/{id}")
+    public ResponseEntity<Void> changeWaiterLeaderStatus(
+        @Parameter(description = "Waiter's id", required = true)
+        @PathVariable String id ) {
+        return waiterService.changeLeaderStatus(id);
+    }
+
+    @GetMapping("/public")
+public ResponseEntity<List<GetWaiterWAvatarDTO>> getAllPublicWaiters() {
+    return waiterService.getWaitersWAvatar();
+}
+
     
 }

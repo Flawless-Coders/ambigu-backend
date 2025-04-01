@@ -6,7 +6,6 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
 import com.flawlesscoders.ambigu.modules.order.Order;
 import com.flawlesscoders.ambigu.modules.order.OrderRepository;
 
@@ -26,6 +25,14 @@ public class ModifyRequestService {
         return requestRepository.findAll();
     }   
 
+    public List<ModifyRequest> getPendingRequests(){
+        return requestRepository.findActiveModifyRequestsWithOrders();
+    }  
+
+    public ModifyRequest getById(String id){
+        return requestRepository.findById(id)
+        .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
     /**
      * Searches for a modify request by its ID.
      * @param id Modify request ID.
@@ -41,11 +48,9 @@ public class ModifyRequestService {
                 }
 
                 DecimalFormat df = new DecimalFormat("#.##");
-                float totalFormatted = Float.parseFloat(df.format(total));
-
+                float totalFormatted = Float.parseFloat(df.format(total));                
                 modifyRequest.setTotal(totalFormatted);
                 modifyRequest.setToDelete(false);
-
                 requestRepository.save(modifyRequest);
                 return modifyRequest;
             } else {
@@ -73,6 +78,10 @@ public class ModifyRequestService {
                     .modifiedDishes(found.getDishes())
                     .total(found.getTotal())
                     .waiter(found.getWaiter())
+                    .table((found.getTable()))
+                    .tableName(found.getTableName())
+                    .workplan((found.getWorkplan()))
+                    .orderNumber((found.getOrderNumber()))
                     .deletedRequest(false)
                     .build();
                 requestRepository.save(deleteRequest);
@@ -84,6 +93,14 @@ public class ModifyRequestService {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
+    }
+
+    public boolean rejectModifyRequest(String id){
+        ModifyRequest request = requestRepository.findById(id)
+        .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        request.setDeletedRequest(true);
+        requestRepository.save(request);
+        return true;
     }
 }
 

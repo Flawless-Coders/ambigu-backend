@@ -1,6 +1,5 @@
 package com.flawlesscoders.ambigu.modules.user.admin;
 
-import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.flawlesscoders.ambigu.modules.user.base.User;
@@ -12,7 +11,6 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Document(collection="users")
-@TypeAlias("admin")
 @Getter
 @Setter
 @NoArgsConstructor

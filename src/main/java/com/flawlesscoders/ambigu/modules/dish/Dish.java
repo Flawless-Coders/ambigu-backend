@@ -26,15 +26,15 @@ public class Dish {
     @Schema(description = "Brief description of the dish.")
     private String description;
 
-    @NotBlank(message = "La imagen del platillo es obligatoria.")
-    @Schema(description = "URL of the dish image.")
-    private String image;
-
     @NotBlank(message = "La categoría del platillo es obligatoria.")
     @Schema(description = "Identifier of the category to which the dish belongs.")
     private String category;
 
-    @NotBlank(message = "El estado del platillo es obligatorio.")
+    @Schema(description = "Base64 representation of the dish image.")
+    private String imageBase64;
+
     @Schema(description = "Indicates whether the dish is active or inactive.")
     private boolean status;
+
+    private float price;
 }
