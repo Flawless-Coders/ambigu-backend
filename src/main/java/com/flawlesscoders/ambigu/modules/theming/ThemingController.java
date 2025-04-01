@@ -2,10 +2,12 @@ package com.flawlesscoders.ambigu.modules.theming;
 
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -69,5 +71,11 @@ public class ThemingController {
     public ResponseEntity<?> applyChanges(HttpServletRequest request) {
         return themingService.applyChanges(request.getSession().getId());
     }
+
+    @GetMapping("/public-theme/default_theme")
+    public ResponseEntity<Theming> getDefaultTheme() {
+        return themingService.getDefaultTheme();
+    }
+
     
 }

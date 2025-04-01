@@ -103,9 +103,9 @@ public class OrderController {
         return ResponseEntity.ok(service.getCurrentTableOrder(tableName));
     }
 
-    @GetMapping("/public/{orderNumber}")
-    public ResponseEntity<Order> getOrderByOrderNumber(@PathVariable long orderNumber) {
-        return ResponseEntity.ok(service.findByOrderNumber(orderNumber));
+    @GetMapping("/public/{token}")
+    public ResponseEntity<Order> getOrderByOrderNumber(@PathVariable String token) {
+        return ResponseEntity.ok(service.findByToken(token));
     }
 
 }
