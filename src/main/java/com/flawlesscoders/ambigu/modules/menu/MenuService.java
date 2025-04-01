@@ -13,8 +13,6 @@ import com.flawlesscoders.ambigu.modules.dish.DishRepository;
 import lombok.RequiredArgsConstructor;
 import com.flawlesscoders.ambigu.modules.menu.dto.MenuDTO;
 
-import lombok.AllArgsConstructor;
-
 /**
  * Service for managing menus in the system.
  */
@@ -344,4 +342,7 @@ public class MenuService {
         return dishesByCategory;
     }
 
+    public String getMenuURL(){
+        return url+"/public-menu";
+    }
 }

@@ -243,6 +243,11 @@ public class MenuController {
             return ResponseEntity.ok(menuService.getCurrentMenu());
         }
 
+        @GetMapping("/getMenuURL")
+        public String getMenuURL(){
+            return menuService.getMenuURL();
+        }
+
         @GetMapping("/public/currentMenuCategoriesAndDishes")
         public ResponseEntity<List<MenuDTO>> getCategoriesAndDishes(){
             return ResponseEntity.ok(menuService.getCategoriesAndDishes());

@@ -39,9 +39,9 @@ public class OrderService {
     private final WorkplanService workplanService;
     private final WaiterRepository waiterRepository;
     private final DishRepository dishRepository;
-
     @Value("${frontend.url}")
     private String url;
+    
 
     /**
      * Retrieves all registered orders.
