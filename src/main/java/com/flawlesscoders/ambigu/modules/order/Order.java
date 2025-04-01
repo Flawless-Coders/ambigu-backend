@@ -49,4 +49,6 @@ public class Order {
     private Date date;
 
     private boolean deleted;
+
+    private String token;
 }

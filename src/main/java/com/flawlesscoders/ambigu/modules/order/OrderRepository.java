@@ -19,8 +19,8 @@ public interface OrderRepository extends MongoRepository<Order, String>{
     @Query("{'table': ?tableId}")
     List<Order> getOrdersByTable(String tableId);
 
-    @Query("{'orderNumber': ?0}")
-    Order findByOrderNumber(long orderNumber);
+    @Query("{'token': ?0}")
+    Order findByToken(String token);
 
     //FindByDateBetween
     List<Order> findByDateBetween(java.util.Date from, java.util.Date to);

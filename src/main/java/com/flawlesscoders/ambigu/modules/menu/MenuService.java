@@ -2,27 +2,28 @@ package com.flawlesscoders.ambigu.modules.menu;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
 import com.flawlesscoders.ambigu.modules.category.Category;
 import com.flawlesscoders.ambigu.modules.category.CategoryRepository;
 import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.dish.DishRepository;
-
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Service for managing menus in the system.
  */
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class MenuService {
     private final MenuRepository menuRepository;
     private final DishRepository dishRepository;
     private final CategoryRepository categoryRepository;
+
+     @Value("${frontend.url}")
+    private String url;
 
     /**
      * Searches for a menu by its ID.
@@ -312,4 +313,7 @@ public class MenuService {
         return currentMenu;
     }
 
+    public String getMenuURL(){
+        return url+"/public-menu";
+    }
 }
