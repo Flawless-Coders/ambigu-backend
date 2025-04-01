@@ -29,4 +29,8 @@ public class OrderDishes {
 
     @Schema(description = "Comment of the dish")
     private String comment;
+
+    @Schema(description = "image of the dish")
+    private String imageBase64;
+
 }

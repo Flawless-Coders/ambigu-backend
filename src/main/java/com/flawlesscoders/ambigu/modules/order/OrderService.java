@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.flawlesscoders.ambigu.modules.dish.Dish;
+import com.flawlesscoders.ambigu.modules.dish.DishRepository;
 import com.flawlesscoders.ambigu.modules.order.dto.OrderFeedbackDTO;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequest;
 import com.flawlesscoders.ambigu.modules.order.modify.ModifyRequestRepository;
@@ -34,6 +36,7 @@ public class OrderService {
     private final TableRepository tableRepository;
     private final WorkplanService workplanService;
     private final WaiterRepository waiterRepository;
+    private final DishRepository dishRepository;
 
     /**
      * Retrieves all registered orders.
@@ -61,7 +64,17 @@ public class OrderService {
      */
     public Order createOrder(Order order){
         float total = 0;
+        int counter = 0;
         try{
+
+            for(OrderDishes d : order.getDishes()){
+                Dish orderedDish = new Dish();
+                orderedDish = dishRepository.findById(d.getDishId()).orElse(null);
+                if(orderedDish != null && orderedDish.getImageBase64() != null){
+                    order.getDishes().get(counter).setImageBase64(orderedDish.getImageBase64());
+                } 
+                counter++;
+            }
 
             Table table = tableRepository.findById(order.getTable())
             .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
@@ -274,9 +287,16 @@ public class OrderService {
         if (order.getDishes() == null) {
             order.setDishes(new ArrayList<>());
         }
-    
+        
+        int counter=0;
         try {
             for (OrderDishes orderDishes : dishes) {
+                Dish orderedDish = new Dish();
+                orderedDish = dishRepository.findById(orderDishes.getDishId()).orElse(null);
+                if(orderedDish != null && orderedDish.getImageBase64() != null){
+                    orderDishes.setImageBase64(orderedDish.getImageBase64());
+                }
+
                 boolean dishExists = false; 
                 for (OrderDishes orderDishesOriginal : order.getDishes()) {
                     if (orderDishes.getDishId().equals(orderDishesOriginal.getDishId())) {
@@ -288,6 +308,7 @@ public class OrderService {
                     order.getDishes().add(orderDishes);
                 }
                 totalNewDishes += (orderDishes.getQuantity() * orderDishes.getUnitPrice());
+                counter++;
             }
             order.setTotal(currentTotal + totalNewDishes);
             return repository.save(order);
