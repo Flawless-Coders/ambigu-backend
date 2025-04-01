@@ -241,4 +241,9 @@ public class MenuController {
         public ResponseEntity<Menu> getCurrentMenu(){
             return ResponseEntity.ok(menuService.getCurrentMenu());
         }
+
+        @GetMapping("/getMenuURL")
+        public String getMenuURL(){
+            return menuService.getMenuURL();
+        }
     }
