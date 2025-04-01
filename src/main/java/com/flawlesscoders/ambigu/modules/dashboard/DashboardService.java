@@ -15,6 +15,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -30,11 +31,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.flawlesscoders.ambigu.modules.category.Category;
 import com.flawlesscoders.ambigu.modules.category.CategoryRepository;
+import com.flawlesscoders.ambigu.modules.category.dto.CategoryLite;
 import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.dish.DishRepository;
+import com.flawlesscoders.ambigu.modules.dish.dto.DishLite;
 import com.flawlesscoders.ambigu.modules.order.Order;
 import com.flawlesscoders.ambigu.modules.order.OrderDishes;
 import com.flawlesscoders.ambigu.modules.order.OrderRepository;
+import com.flawlesscoders.ambigu.modules.order.dto.DailyOrderCount;
 import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
 import java.util.function.Function;
 
@@ -223,8 +227,8 @@ public class DashboardService {
             LocalDate previousEnd = start.minusDays(1);
             LocalDate previousStart = previousEnd.minusDays(29);
 
-            Map<String, Integer> currentMap = getCountsWithRepository(start, end);
-            Map<String, Integer> previousMap = getCountsWithRepository(previousStart, previousEnd);
+            Map<String, Integer> currentMap = getCountsWithAggregation(start, end);
+            Map<String, Integer> previousMap = getCountsWithAggregation(previousStart, previousEnd);
 
             int total = currentMap.values().stream().mapToInt(Integer::intValue).sum();
             int average = (int) currentMap.values().stream().mapToInt(Integer::intValue).average().orElse(0);
@@ -259,31 +263,26 @@ public class DashboardService {
         }
     }
 
-    private Map<String, Integer> getCountsWithRepository(LocalDate from, LocalDate to) {
-        Date fromDate = java.sql.Date.valueOf(from);
-        Date toDate = java.sql.Date.valueOf(to);
+private Map<String, Integer> getCountsWithAggregation(LocalDate from, LocalDate to) {
+    Date fromDate = java.sql.Date.valueOf(from);
+    Date toDate = java.sql.Date.valueOf(to);
 
-        // Obtener todas las órdenes activas en el rango
-        List<Order> orders = orderRepository.findByDateBetween(fromDate, toDate).stream()
-                .filter(order -> !order.isDeleted())
-                .toList();
+    List<DailyOrderCount> results = orderRepository.countOrdersByDay(fromDate, toDate);
 
-        // Inicializar mapa con todos los días del rango (inicializados en 0)
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
-            String label = capitalize(date.format(DateTimeFormatter.ofPattern("MMM d", new Locale("es"))));
-            counts.put(label, 0);
-        }
-
-        // Agrupar en memoria
-        for (Order order : orders) {
-            LocalDate date = order.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            String label = capitalize(date.format(DateTimeFormatter.ofPattern("MMM d", new Locale("es"))));
-            counts.computeIfPresent(label, (k, v) -> v + 1);
-        }
-
-        return counts;
+    Map<String, Integer> counts = new LinkedHashMap<>();
+    for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
+        String label = capitalize(date.format(DateTimeFormatter.ofPattern("MMM d", new Locale("es"))));
+        counts.put(label, 0);
     }
+
+    for (DailyOrderCount doc : results) {
+        LocalDate date = LocalDate.parse(doc.getId()); // id = "2025-03-29"
+        String label = capitalize(date.format(DateTimeFormatter.ofPattern("MMM d", new Locale("es"))));
+        counts.put(label, doc.getCount());
+    }
+
+    return counts;
+}
 
     private String capitalize(String str) {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
@@ -291,11 +290,13 @@ public class DashboardService {
 
     public ResponseEntity<Map<String, Object>> getHourlySalesByCategory(LocalDate date) {
         try {
-            // 1. Configurar rango del día
+            long startTime = System.currentTimeMillis();
+    
+            // 1. Rango del día
             LocalDateTime startOfDay = date.atStartOfDay();
             LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
-            
-            // 2. Obtener órdenes del día
+    
+            // 2. Obtener órdenes activas del día
             List<Order> orders = orderRepository.findByDateBetween(
                 Date.from(startOfDay.atZone(ZoneId.systemDefault()).toInstant()),
                 Date.from(endOfDay.atZone(ZoneId.systemDefault()).toInstant())
@@ -303,32 +304,38 @@ public class DashboardService {
              .filter(order -> !order.isDeleted())
              .toList();
     
-            // 3. Obtener categorías únicas
-            Set<String> categories = dishRepository.findAll().stream()
-                .map(Dish::getCategory)
+            Set<String> dishIds = orders.stream()
+                .flatMap(order -> order.getDishes().stream())
+                .map(OrderDishes::getDishId)
                 .collect(Collectors.toSet());
     
-            // 4. Inicializar estructura de datos horarios
+            Map<String, String> dishIdToCategory = dishRepository.findCategoryByIdIn(dishIds).stream()
+                .collect(Collectors.toMap(DishLite::getId, DishLite::getCategory));
+
+            Set<String> categories = new HashSet<>(dishIdToCategory.values());
+
+            // Inicializar estructura por hora y categoría
             Map<String, Map<String, Double>> hourlyData = new TreeMap<>();
             for (int hour = 0; hour < 24; hour++) {
                 String hourKey = String.format("%02d:00", hour);
-                hourlyData.put(hourKey, new HashMap<>());
-                categories.forEach(cat -> hourlyData.get(hourKey).put(cat, 0.0));
+                Map<String, Double> hourMap = new HashMap<>();
+                for (String category : categories) {
+                    hourMap.put(category, 0.0);
+                }
+                hourlyData.put(hourKey, hourMap);
             }
     
-            // 5. Procesar cada orden (adaptado a tu estructura con 'dishes')
+            // 6. Procesar órdenes con mapa de platos
             for (Order order : orders) {
-                int hour = order.getDate().toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .getHour();
+                int hour = order.getDate().toInstant().atZone(ZoneId.systemDefault()).getHour();
                 String hourKey = String.format("%02d:00", hour);
-                
-                for (OrderDishes dishItem : order.getDishes()) { // Cambiado a getDishes()
-                    Dish dish = dishRepository.findById(dishItem.getDishId()).orElse(null);
-                    if (dish != null) {
+    
+                for (OrderDishes dishItem : order.getDishes()) {
+                    String category = dishIdToCategory.get(dishItem.getDishId());
+                    if (category != null) {
                         double amount = dishItem.getQuantity() * dishItem.getUnitPrice();
                         hourlyData.get(hourKey).merge(
-                            dish.getCategory(),
+                            category,
                             amount,
                             Double::sum
                         );
@@ -336,21 +343,18 @@ public class DashboardService {
                 }
             }
     
-            // 6. Calcular totales por hora
+            // 7. Totales por hora
             Map<String, Double> hourlyTotals = new LinkedHashMap<>();
             hourlyData.forEach((hour, categoriesMap) -> {
                 double total = categoriesMap.values().stream().mapToDouble(Double::doubleValue).sum();
                 hourlyTotals.put(hour, total);
             });
-
-            Map<String, String> categoryNames = categoryRepository.findAll().stream()
-            .filter(Category::isStatus)
-            .collect(Collectors.toMap(
-                Category::getId,
-                Category::getName
-            ));
     
-            // 7. Preparar respuesta
+            // 8. Nombres de categorías (solo activas)
+            Map<String, String> categoryNames = categoryRepository.findActiveCategoryNames().stream()
+                .collect(Collectors.toMap(CategoryLite::getId, CategoryLite::getName));
+    
+            // 9. Respuesta
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("date", date.toString());
             response.put("categories", categoryNames);
@@ -381,58 +385,65 @@ public class DashboardService {
              .filter(order -> !order.isDeleted())
              .toList();
     
+            // Contar cuántas veces aparece cada dishId
             Map<String, Integer> foodCounts = new HashMap<>();
-    
             for (Order order : orders) {
                 for (OrderDishes dishItem : order.getDishes()) {
                     String dishId = dishItem.getDishId();
-                    if(dishId == null || dishId.isEmpty()) {
-                        continue; // Skip if dishId is null or empty
-                    }
+                    if (dishId == null || dishId.isEmpty()) continue;
                     foodCounts.put(dishId, foodCounts.getOrDefault(dishId, 0) + 1);
                 }
             }
     
+            // Ordenar por frecuencia
             List<Map.Entry<String, Integer>> sorted = foodCounts.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .toList();
     
+            // Obtener los ids de los top platos
+            List<String> topDishIds = sorted.stream()
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .toList();
+    
+            // 🔥 Traer los nombres SIN imágenes
+            Map<String, String> dishIdToName = dishRepository.findNameByIdIn(topDishIds).stream()
+                .collect(Collectors.toMap(DishLite::getId, DishLite::getName));
+    
+            // Armar lista de topFoods
             List<Map<String, Object>> topFoods = new ArrayList<>();
             int othersCount = 0;
     
-            // Primero, calcula el total de todos los platos
-            int totalCount = sorted.stream()
-                .mapToInt(Map.Entry::getValue)
-                .sum();
+            int totalCount = sorted.stream().mapToInt(Map.Entry::getValue).sum();
     
-            // Procesa los 5 principales y suma el resto a othersCount
             for (int i = 0; i < sorted.size(); i++) {
                 Map.Entry<String, Integer> entry = sorted.get(i);
-                if (i < 5) {
-                    Dish dish = dishRepository.findById(entry.getKey()).orElse(null);
-                    if (dish != null) {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("name", dish.getName());
-                        map.put("count", entry.getValue());
-                        topFoods.add(map);
-                    } else {
-                        othersCount += entry.getValue();
-                    }
+                String dishId = entry.getKey();
+                int count = entry.getValue();
+    
+                if (i < 5 && dishIdToName.containsKey(dishId)) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", dishIdToName.get(dishId));
+                    map.put("count", count);
+                    topFoods.add(map);
                 } else {
-                    // Todos los elementos después del índice 4 (los 5 primeros) van a "others"
-                    othersCount += entry.getValue();
+                    othersCount += count;
                 }
             }
     
             Map<String, Object> response = new HashMap<>();
             response.put("topFoods", topFoods);
             response.put("othersCount", othersCount);
-            
+    
             return ResponseEntity.ok(response);
     
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching most popular foods", e);
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "An error occurred while fetching most popular foods",
+                e
+            );
         }
     }
 
@@ -476,11 +487,12 @@ public class DashboardService {
             });
     
             // 5. Obtener nombres de categorías
-            Map<String, String> categoryNames = categoryRepository.findAllById(categorySales.keySet()).stream()
-                .collect(Collectors.toMap(
-                    Category::getId,
-                    Category::getName
-                ));
+            Map<String, String> categoryNames = categoryRepository.findActiveCategoryNames().stream()
+            .filter(cat -> categorySales.containsKey(cat.getId())) // solo los necesarios
+            .collect(Collectors.toMap(
+                CategoryLite::getId,
+                CategoryLite::getName
+            ));
     
             // 6. Ordenar por cantidad descendente
             List<Map.Entry<String, Integer>> sortedCategories = categorySales.entrySet().stream()

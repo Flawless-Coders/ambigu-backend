@@ -60,6 +60,13 @@ public class DishService {
         if (dish.getDescription() == null || dish.getDescription().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The dish description cannot be empty.");
         }
+        if (dish.getName().length()>25) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del platillo no puede ser tan larg0.");
+        }
+        if (dish.getDescription().length()>120) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La descripción del platillo no puede ser tan larga.");
+        }
+
         dish.setStatus(true); // The dish is always created as active
         return dishRepository.save(dish);
     }
@@ -74,12 +81,23 @@ public class DishService {
      */
     public Dish updateDish(String id, Dish updatedDish) {
         Dish existingDish = getDishById(id);
+        if (updatedDish.getName() == null || updatedDish.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The dish name cannot be empty.");
+        }
+        if (updatedDish.getDescription() == null || updatedDish.getDescription().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The dish description cannot be empty.");
+        }
+        if (updatedDish.getName().length()>25) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del platillo no puede ser tan largo.");
+        }
+        if (updatedDish.getDescription().length()>120) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La descripción del platillo no puede ser tan larga.");
+        }
 
         existingDish.setName(updatedDish.getName());
         existingDish.setDescription(updatedDish.getDescription());
         existingDish.setCategory(updatedDish.getCategory());
         existingDish.setPrice(updatedDish.getPrice());
-        // mi cambio
         existingDish.setImageBase64(updatedDish.getImageBase64());
         return dishRepository.save(existingDish);
     }

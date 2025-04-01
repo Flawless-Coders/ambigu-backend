@@ -11,6 +11,9 @@ import com.flawlesscoders.ambigu.modules.category.CategoryRepository;
 import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.dish.DishRepository;
 import lombok.RequiredArgsConstructor;
+import com.flawlesscoders.ambigu.modules.menu.dto.MenuDTO;
+
+import lombok.AllArgsConstructor;
 
 /**
  * Service for managing menus in the system.
@@ -313,7 +316,32 @@ public class MenuService {
         return currentMenu;
     }
 
-    public String getMenuURL(){
-        return url+"/public-menu";
+    public List<MenuDTO> getCategoriesAndDishes(){
+        List<MenuDTO> dishesByCategory = new ArrayList<>();
+        Menu currentMenu = menuRepository.getCurrentMenu().orElse(null);
+
+        for(String categoryId : currentMenu.getCategories()){
+            Category category = new Category();
+            MenuDTO categoryAndDishes = new MenuDTO();
+            List<Dish> dishesList = new ArrayList<>();
+            
+            category = categoryRepository.findById(categoryId).orElse(null);
+            categoryAndDishes.setCategory(category);
+            
+            for(String dishId : currentMenu.getDishes()){
+                Dish dish = new Dish();
+                dish = dishRepository.findById(dishId).orElse(null);
+
+                if(dish.getCategory().equals(category.getId()) && dish.isStatus()){
+                    dishesList.add(dish);
+                }
+
+            }
+            categoryAndDishes.setDishes(dishesList);
+            dishesByCategory.add(categoryAndDishes);
+        }
+        
+        return dishesByCategory;
     }
+
 }
