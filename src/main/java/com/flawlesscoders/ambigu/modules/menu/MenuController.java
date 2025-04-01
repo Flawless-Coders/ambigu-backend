@@ -5,6 +5,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.flawlesscoders.ambigu.modules.category.Category;
 import com.flawlesscoders.ambigu.modules.dish.Dish;
+import com.flawlesscoders.ambigu.modules.menu.dto.MenuDTO;
 import com.flawlesscoders.ambigu.utils.config.FileService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -245,5 +246,10 @@ public class MenuController {
         @GetMapping("/getMenuURL")
         public String getMenuURL(){
             return menuService.getMenuURL();
+        }
+        
+        @GetMapping("/public/currentMenuCategoriesAndDishes")
+        public ResponseEntity<List<MenuDTO>> getCategoriesAndDishes(){
+            return ResponseEntity.ok(menuService.getCategoriesAndDishes());
         }
     }
