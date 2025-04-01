@@ -361,8 +361,6 @@ private Map<String, Integer> getCountsWithAggregation(LocalDate from, LocalDate 
             response.put("hourlyData", hourlyData);
             response.put("hourlyTotals", hourlyTotals);
     
-            System.out.println("⌛ Tiempo total: " + (System.currentTimeMillis() - startTime) + "ms");
-    
             return ResponseEntity.ok(response);
     
         } catch (Exception e) {
