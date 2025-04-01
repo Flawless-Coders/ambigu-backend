@@ -10,9 +10,8 @@ import com.flawlesscoders.ambigu.modules.category.Category;
 import com.flawlesscoders.ambigu.modules.category.CategoryRepository;
 import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.dish.DishRepository;
-import com.flawlesscoders.ambigu.modules.menu.dto.MenuDTO;
-
 import lombok.RequiredArgsConstructor;
+import com.flawlesscoders.ambigu.modules.menu.dto.MenuDTO;
 
 /**
  * Service for managing menus in the system.

@@ -111,4 +111,13 @@ public class ThemingService {
             return ResponseEntity.internalServerError().body("Error al aplicar los cambios: " + e.getMessage());
         }
     }
+
+    public ResponseEntity<Theming> getDefaultTheme() {
+        try{
+            Theming theming = themingRepository.find();
+            return ResponseEntity.ok(theming);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error updating fonts");
+        }
+    }
 }
