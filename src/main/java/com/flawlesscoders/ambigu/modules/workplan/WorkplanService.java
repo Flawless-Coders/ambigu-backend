@@ -610,6 +610,11 @@ public class WorkplanService {
     //method to reutilice a workplan to still existing
     public boolean restartWorkplan(String workplanId) {
         try {
+            // Verificar si ya existe un plan activo
+            if (workplanRepository.existsByIsPresent(true)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya existe un plan de trabajo activo. Por favor, finalice el plan actual antes de reutilizar otro.");
+            }
+
             // Buscar el plan de trabajo
             Workplan workplan = workplanRepository.findById(workplanId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
