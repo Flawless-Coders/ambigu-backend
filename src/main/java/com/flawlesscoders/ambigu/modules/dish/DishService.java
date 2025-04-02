@@ -14,6 +14,8 @@ import com.flawlesscoders.ambigu.modules.category.Category;
 import com.flawlesscoders.ambigu.modules.category.CategoryRepository;
 import com.flawlesscoders.ambigu.modules.menu.Menu;
 import com.flawlesscoders.ambigu.modules.menu.MenuRepository;
+import com.flawlesscoders.ambigu.utils.config.FileService;
+
 import java.util.Base64;
 import java.util.List;
 
@@ -24,6 +26,7 @@ public class DishService {
     private final DishRepository dishRepository;
     private final MenuRepository menuRepository;
     private final CategoryRepository categoryRepository;
+    private final FileService fileService;
 
     /**
      * Retrieves all dishes.
@@ -139,15 +142,18 @@ public class DishService {
         if (image == null || image.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen no puede estar vacía.");
         }
+    
+        Dish dish = getDishById(id);
 
-        try {
-            Dish dish = getDishById(id);
-            String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
-            dish.setImageBase64(base64Image);
-            dishRepository.save(dish);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al convertir la imagen a Base64.");
+        if (dish.getImageId() != null && !dish.getImageId().isEmpty()) {
+            fileService.deleteFile(dish.getImageId());
         }
+    
+        String newFileId = fileService.saveFile(image);
+    
+        // Actualizar el platillo
+        dish.setImageId(newFileId);         
+        dishRepository.save(dish);
     }
 
     /**
