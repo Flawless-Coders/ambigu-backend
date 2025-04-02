@@ -18,9 +18,11 @@ import org.springframework.core.io.Resource;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.mongodb.gridfs.GridFsResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
@@ -68,9 +70,11 @@ public class MenuController {
         String contentType = gridFsResource.getContentType();
         
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + gridFsResource.getFilename() + "\"")
-                .body((Resource) gridFsResource); 
+            .contentType(MediaType.parseMediaType(contentType))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + gridFsResource.getFilename() + "\"")
+            .cacheControl(CacheControl.maxAge(30, TimeUnit.DAYS).cachePublic()) // caché de 30 días
+            .body((Resource) gridFsResource);
+
     }
 
     @Operation(summary = "Get dishes by menu and category of a disable menu", description = "Returns a list of dishes belonging to a specific menu and category based on their menu status (enabled/disabled)")
