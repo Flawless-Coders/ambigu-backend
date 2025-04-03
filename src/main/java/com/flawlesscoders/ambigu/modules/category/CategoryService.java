@@ -89,13 +89,16 @@ public class CategoryService {
     public Category updateCategory(String id, Category updatedCategory) {
         Category existingCategory = getCategoryById(id);
     
-        if (updatedCategory.getName() != null && !updatedCategory.getName().isBlank()) {
-            validateCategoryName(updatedCategory.getName());
-            existingCategory.setName(updatedCategory.getName().trim());
+        String newName = updatedCategory.getName();
+        if (newName != null && !newName.isBlank()) {
+            newName = newName.trim();
+            if (!existingCategory.getName().equalsIgnoreCase(newName)) {
+                validateCategoryName(newName);
+                existingCategory.setName(newName);
+            }
         }
     
         existingCategory.setStatus(updatedCategory.isStatus());
-    
         return categoryRepository.save(existingCategory);
     }
 
