@@ -17,6 +17,8 @@ public class OrderDishes {
     @Schema(description = "Dish's ID for the order")
     private String dishId;
 
+    private String dishName;
+    
     @NotNull(message = "La cantidad del platillo no puede ser nula")
     @Schema(description = "Quantity of the dish")
     private int quantity;
@@ -27,4 +29,8 @@ public class OrderDishes {
 
     @Schema(description = "Comment of the dish")
     private String comment;
+
+    @Schema(description = "image of the dish")
+    private String imageBase64;
+
 }

@@ -31,6 +31,8 @@ public class Order {
     @NotBlank(message = "Se debe de agregar una mesa a la orden")
     private String table;
 
+    private String tableName;
+
     @NotNull(message = "Se deben de agregar platillos a la orden")
     private List<OrderDishes> dishes;
 
@@ -40,9 +42,13 @@ public class Order {
 
     private String waiter;
 
+    private String workplan;
+
     private Opinion opinion;
 
     private Date date;
 
     private boolean deleted;
+
+    private String token;
 }

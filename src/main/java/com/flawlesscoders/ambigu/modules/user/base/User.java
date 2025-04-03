@@ -38,7 +38,6 @@ public abstract class User implements UserDetails {
     private String password;
 
     @Schema(description = "User's role")
-    @NotNull(message = "El rol es requerido")
     private Role role;
 
     @Schema(description = "User's name")
@@ -52,6 +51,10 @@ public abstract class User implements UserDetails {
     @Schema(description = "User's second lastname")
     @NotNull(message = "El apellido materno es requerido")
     private String lastname_m;
+
+    @Schema(description = "User's phone number")
+    @NotNull(message = "El teléfono es requerido")
+    private String phone;
 
     @Schema(description = "User's Avatar")
     private String avatarBase64;

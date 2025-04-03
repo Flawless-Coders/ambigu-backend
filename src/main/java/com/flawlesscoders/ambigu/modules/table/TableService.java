@@ -56,18 +56,20 @@ public class TableService {
     }
 
     //method to update table 
-    public Table updateTable(Table table){
+    public boolean updateTable(Table table){
         try {
             Table foundTable = tableRepository.findById(table.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Mesa no encontrada"));
             if(foundTable != null){
                 table.setEnabled(foundTable.isEnabled());
                 table.setTableClientStatus(foundTable.getTableClientStatus());
                 table.setTableWaiter(foundTable.isTableWaiter());
-                return tableRepository.save(table);
+               tableRepository.save(table);
+               return true;
             }else{
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Error en la actualizacion");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Error al obtener la mesa");
         }
     }
@@ -125,7 +127,7 @@ public class TableService {
     public List<Table> getEnabledTablesWithoutWaiter(){
         try {
             if(tableRepository.findEnabledTablesWithoutWaiter().isEmpty()){
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No hay mesas sin mesero");
+                return null;
             }else{
                 return tableRepository.findEnabledTablesWithoutWaiter();
             }

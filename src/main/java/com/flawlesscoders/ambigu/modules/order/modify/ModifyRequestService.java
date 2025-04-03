@@ -7,7 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.flawlesscoders.ambigu.modules.dish.Dish;
+import com.flawlesscoders.ambigu.modules.dish.DishRepository;
 import com.flawlesscoders.ambigu.modules.order.Order;
+import com.flawlesscoders.ambigu.modules.order.OrderDishes;
 import com.flawlesscoders.ambigu.modules.order.OrderRepository;
 
 import lombok.AllArgsConstructor;
@@ -17,6 +20,7 @@ import lombok.AllArgsConstructor;
 public class ModifyRequestService {
     private final ModifyRequestRepository requestRepository;
     private final OrderRepository repository;
+    private final DishRepository dishRepository;
 
     /**
      * Retrieves all modify requests.
@@ -26,6 +30,14 @@ public class ModifyRequestService {
         return requestRepository.findAll();
     }   
 
+    public List<ModifyRequest> getPendingRequests(){
+        return requestRepository.findActiveModifyRequestsWithOrders();
+    }  
+
+    public ModifyRequest getById(String id){
+        return requestRepository.findById(id)
+        .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
     /**
      * Searches for a modify request by its ID.
      * @param id Modify request ID.
@@ -35,17 +47,24 @@ public class ModifyRequestService {
     public ModifyRequest sendModifyRequest (ModifyRequest modifyRequest){
         try {
             float total = 0;
+            int counter=0;
             if (repository.existsById(modifyRequest.getOrderId())) {
                 for(int i = 0; i< modifyRequest.getModifiedDishes().size(); i++){
                     total += modifyRequest.getModifiedDishes().get(i).getUnitPrice() * modifyRequest.getModifiedDishes().get(i).getQuantity();
                 }
+                for(OrderDishes dish : modifyRequest.getModifiedDishes()){
+                    Dish currentDish = new Dish();
+                    currentDish = dishRepository.findById(dish.getDishId()).orElse(null);
+                    if(currentDish != null && currentDish.getImageBase64()!=null){
+                        modifyRequest.getModifiedDishes().get(counter).setImageBase64(currentDish.getImageBase64());
+                    }
+                    counter++;
+                }
 
                 DecimalFormat df = new DecimalFormat("#.##");
-                float totalFormatted = Float.parseFloat(df.format(total));
-
+                float totalFormatted = Float.parseFloat(df.format(total));                
                 modifyRequest.setTotal(totalFormatted);
                 modifyRequest.setToDelete(false);
-
                 requestRepository.save(modifyRequest);
                 return modifyRequest;
             } else {
@@ -73,6 +92,10 @@ public class ModifyRequestService {
                     .modifiedDishes(found.getDishes())
                     .total(found.getTotal())
                     .waiter(found.getWaiter())
+                    .table((found.getTable()))
+                    .tableName(found.getTableName())
+                    .workplan((found.getWorkplan()))
+                    .orderNumber((found.getOrderNumber()))
                     .deletedRequest(false)
                     .build();
                 requestRepository.save(deleteRequest);
@@ -84,6 +107,14 @@ public class ModifyRequestService {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
+    }
+
+    public boolean rejectModifyRequest(String id){
+        ModifyRequest request = requestRepository.findById(id)
+        .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        request.setDeletedRequest(true);
+        requestRepository.save(request);
+        return true;
     }
 }
 

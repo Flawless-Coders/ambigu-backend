@@ -3,11 +3,14 @@ package com.flawlesscoders.ambigu.modules.category;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-
+import java.io.IOException;
 import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.dish.DishRepository;
 
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -16,6 +19,22 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final DishRepository dishRepository;
+
+    private void validateCategoryName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la categoría no puede estar vacío.");
+        }
+
+        name = name.trim();
+
+        List<Category> existingCategories = categoryRepository.findAll();
+        for (Category existing : existingCategories) {
+            if (existing.getName().trim().equalsIgnoreCase(name.trim())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "Ya existe una categoría con ese nombre.");
+            }
+        }
+    }
 
     /**
      * Retrieves all categories.
@@ -42,11 +61,23 @@ public class CategoryService {
      * @return The saved category.
      * @throws ResponseStatusException if the data is invalid.
      */
-    public Category saveCategory(Category category) {
-        if (category.getName() == null || category.getName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The category name cannot be empty.");
+    public Category saveCategory(String name, MultipartFile image) {
+        validateCategoryName(name);
+    
+        // Crear una nueva categoría
+        Category category = new Category();
+        category.setName(name.trim());
+        category.setStatus(true);
+    
+        if (image != null && !image.isEmpty()) {
+            try {
+                String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+                category.setImageBase64(base64Image);
+            } catch (IOException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al procesar la imagen.");
+            }
         }
-        category.setStatus(true); // The category is always created as active
+    
         return categoryRepository.save(category);
     }
 
@@ -59,10 +90,14 @@ public class CategoryService {
      */
     public Category updateCategory(String id, Category updatedCategory) {
         Category existingCategory = getCategoryById(id);
-
-        existingCategory.setName(updatedCategory.getName());
-        existingCategory.setImage(updatedCategory.getImage());
-
+    
+        if (updatedCategory.getName() != null && !updatedCategory.getName().isBlank()) {
+            validateCategoryName(updatedCategory.getName());
+            existingCategory.setName(updatedCategory.getName().trim());
+        }
+    
+        existingCategory.setStatus(updatedCategory.isStatus());
+    
         return categoryRepository.save(existingCategory);
     }
 
@@ -87,6 +122,21 @@ public class CategoryService {
         categoryRepository.save(category);
     }
 
+    public void updateCategoryImage(String id, MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen no puede estar vacía.");
+        }
+
+        try {
+            Category category = getCategoryById(id);
+            String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+            category.setImageBase64(base64Image);
+            categoryRepository.save(category);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al convertir la imagen a Base64.");
+        }
+    }
+
     /**
      * Toggles the status of a category between active and inactive.
      * @param id The ID of the category.
@@ -96,4 +146,9 @@ public class CategoryService {
         category.setStatus(!category.isStatus());
         categoryRepository.save(category);
     }
+
+    public List<Category> findByStatus(boolean status){
+        return categoryRepository.findByStatus(status);
+    }
+    
 }
