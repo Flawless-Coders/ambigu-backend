@@ -52,4 +52,16 @@ public class FileService {
             throw new RuntimeException("Error al eliminar el archivo de GridFS", e);
         }
     }
+
+    public String saveFileFromBase64(String base64Data, String filename, String contentType) {
+        try {
+            byte[] data = java.util.Base64.getDecoder().decode(base64Data);
+            return gridFsTemplate
+                    .store(new java.io.ByteArrayInputStream(data), filename, contentType)
+                    .toHexString();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al guardar archivo base64 en GridFS", e);
+        }
+    }
+    
 }
