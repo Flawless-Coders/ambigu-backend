@@ -627,7 +627,7 @@ public class WorkplanService {
             // Copiar todos los campos necesarios
             newWorkplan.setName(generateCopyName(originalWorkplan.getName()));
             newWorkplan.setPresent(true);
-            newWorkplan.setDate(originalWorkplan.getDate());
+            newWorkplan.setDate(new Date());
             // Copiar otros campos según sea necesario...
     
             // Copiar las asignaciones (deep copy) con manejo de mesas
