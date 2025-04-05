@@ -204,4 +204,30 @@ public class WaiterService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al cambiar el estado de lider del mesero");
         }
     }
+
+    public ResponseEntity<Void> updateWaiterRating(String waiterId, int qualification) {
+        try{
+            Waiter waiter = waiterRepository.findById(waiterId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+
+                float currentAvgRating = waiter.getAvgRating();
+                float newAvgRating;
+
+                if (currentAvgRating == 0){
+                    newAvgRating = qualification;
+                } else {
+                    newAvgRating = (currentAvgRating * 0.8f) + (qualification * 0.2f);
+                }
+
+                newAvgRating = Math.round(newAvgRating * 10) / 10.0f;
+
+                waiter.setAvgRating(newAvgRating);
+                waiterRepository.save(waiter);
+
+                return ResponseEntity.ok().build();
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error al actualiar la calificación del mesero " + e.getMessage());
+        }
+    }
 }
