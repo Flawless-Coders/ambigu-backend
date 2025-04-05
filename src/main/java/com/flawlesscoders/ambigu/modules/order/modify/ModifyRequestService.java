@@ -55,8 +55,8 @@ public class ModifyRequestService {
                 for(OrderDishes dish : modifyRequest.getModifiedDishes()){
                     Dish currentDish = new Dish();
                     currentDish = dishRepository.findById(dish.getDishId()).orElse(null);
-                    if(currentDish != null && currentDish.getImageBase64()!=null){
-                        modifyRequest.getModifiedDishes().get(counter).setImageBase64(currentDish.getImageBase64());
+                    if(currentDish != null && currentDish.getImageId()!=null){
+                        modifyRequest.getModifiedDishes().get(counter).setImageBase64(currentDish.getImageId());
                     }
                     counter++;
                 }

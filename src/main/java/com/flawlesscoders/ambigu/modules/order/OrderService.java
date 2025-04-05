@@ -79,8 +79,8 @@ public class OrderService {
             for(OrderDishes d : order.getDishes()){
                 Dish orderedDish = new Dish();
                 orderedDish = dishRepository.findById(d.getDishId()).orElse(null);
-                if(orderedDish != null && orderedDish.getImageBase64() != null){
-                    order.getDishes().get(counter).setImageBase64(orderedDish.getImageBase64());
+                if(orderedDish != null && orderedDish.getImageId() != null){
+                    order.getDishes().get(counter).setImageBase64(orderedDish.getImageId());
                 } 
                 counter++;
             }
@@ -313,8 +313,8 @@ public class OrderService {
             for (OrderDishes orderDishes : dishes) {
                 Dish orderedDish = new Dish();
                 orderedDish = dishRepository.findById(orderDishes.getDishId()).orElse(null);
-                if(orderedDish != null && orderedDish.getImageBase64() != null){
-                    orderDishes.setImageBase64(orderedDish.getImageBase64());
+                if(orderedDish != null && orderedDish.getImageId() != null){
+                    orderDishes.setImageBase64(orderedDish.getImageId());
                 }
 
                 boolean dishExists = false; 
