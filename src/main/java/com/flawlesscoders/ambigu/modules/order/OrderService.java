@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
 import com.flawlesscoders.ambigu.modules.table.TableRepository;
 import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
 import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
+import com.flawlesscoders.ambigu.modules.user.waiter.WaiterService;
 import com.flawlesscoders.ambigu.modules.workplan.WorkplanService;
 import java.util.UUID;
 import java.util.Base64;
@@ -39,6 +41,7 @@ public class OrderService {
     private final WorkplanService workplanService;
     private final WaiterRepository waiterRepository;
     private final DishRepository dishRepository;
+    private final WaiterService waiterService;
     @Value("${frontend.url}")
     private String url;
     
@@ -138,6 +141,7 @@ public class OrderService {
                     order.setDishes(found.getModifiedDishes());
                     order.setTotal(found.getTotal());
                     order.setWaiter(found.getWaiter());
+                    order.setWaiterId(found.getWaiterId());
                     order.setTable(found.getTable());
                     order.setTableName(found.getTableName());
                     repository.save(order);
@@ -243,6 +247,10 @@ public class OrderService {
                             orderFeedbackDTO.getComment());
                     found.setOpinion(opinion);
                     repository.save(found);
+
+                    if(found.getWaiterId() != null){
+                        waiterService.updateWaiterRating(found.getWaiterId(), orderFeedbackDTO.getQualification());
+                    }
                     return found;
                 } else {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");

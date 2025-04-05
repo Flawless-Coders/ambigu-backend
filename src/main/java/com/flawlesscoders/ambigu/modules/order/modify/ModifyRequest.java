@@ -34,6 +34,7 @@ public class ModifyRequest {
     @Schema(description = "Unit price of the dish")
     private float total;
     private String waiter;
+    private String waiterId;
     private long orderNumber;
     private String table;
     private String tableName;
