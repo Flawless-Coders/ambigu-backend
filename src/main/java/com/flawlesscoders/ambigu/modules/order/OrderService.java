@@ -242,6 +242,7 @@ public class OrderService {
                             orderFeedbackDTO.getQualification(),
                             orderFeedbackDTO.getComment());
                     found.setOpinion(opinion);
+                    found.setToken(null);
                     repository.save(found);
                     return found;
                 } else {
