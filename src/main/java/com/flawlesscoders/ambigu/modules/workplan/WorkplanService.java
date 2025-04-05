@@ -12,6 +12,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.Collections;
 import org.slf4j.Logger;
@@ -64,6 +66,12 @@ public class WorkplanService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya existe un plan en curso");
             }
 
+            List <Workplan> workplans = workplanRepository.findAll();
+            for (Workplan w : workplans) {
+                if (workplanName.equals(w.getName()) && w.isExisting()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya existe ese nombre de plan de trabajo");
+                }
+            }
             Workplan workplan = new Workplan();
             workplan.setPresent(true);
             workplan.setFavorite(false);
@@ -607,49 +615,74 @@ public class WorkplanService {
     // //method to get all disabled tables in a workplan
     //method in history...
     
-    //method to reutilice a workplan to still existing
     public boolean restartWorkplan(String workplanId) {
         try {
-            // Buscar el plan de trabajo
-            Workplan workplan = workplanRepository.findById(workplanId)
+            // Buscar el plan de trabajo original
+            Workplan originalWorkplan = workplanRepository.findById(workplanId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan de trabajo no encontrado"));
     
-            // Obtener todas las asignaciones existentes
-            List<Assignment> updatedAssignments = workplan.getAssigment().stream().map(assignment -> {
-                // Buscar la mesa correspondiente
-                Table table = tableRepository.findById(assignment.getTable())
+            // Crear un nuevo objeto Workplan como copia del original
+            Workplan newWorkplan = new Workplan();
+            
+            // Copiar todos los campos necesarios
+            newWorkplan.setName(generateCopyName(originalWorkplan.getName()));
+            newWorkplan.setPresent(true);
+            newWorkplan.setDate(new Date());
+            // Copiar otros campos según sea necesario...
+    
+            // Copiar las asignaciones (deep copy) con manejo de mesas
+            List<Assignment> copiedAssignments = originalWorkplan.getAssigment().stream().map(originalAssignment -> {
+                Assignment newAssignment = new Assignment();
+                
+                // Obtener la mesa correspondiente
+                Table table = tableRepository.findById(originalAssignment.getTable())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada"));
-    
-                // Verificar si hay meseros asignados previamente
-                List<WaiterWorkplan> waiterWorkplans = assignment.getWaiterWorkplan();
-                if (!waiterWorkplans.isEmpty()) {
-                    // Crear una nueva asignación con la misma mesa y todos los meseros asignados
-                    Assignment newAssignment = new Assignment();
-                    newAssignment.setTable(table.getId());
-                    newAssignment.setWaiterWorkplan(new ArrayList<>(waiterWorkplans)); // Conservar todos los waiterWorkplan
-    
-                    // Marcar la mesa como ocupada (si es necesario)
+                
+                newAssignment.setTable(table.getId());
+                
+                // Copiar la lista de meseros (crear nueva lista pero con los mismos objetos)
+                if (originalAssignment.getWaiterWorkplan() != null && !originalAssignment.getWaiterWorkplan().isEmpty()) {
+                    newAssignment.setWaiterWorkplan(new ArrayList<>(originalAssignment.getWaiterWorkplan()));
+                    // Marcar la mesa como ocupada si tiene meseros asignados
                     table.setTableWaiter(true);
                     tableRepository.save(table);
-                    return newAssignment;
                 } else {
-                    // Si la mesa no tiene meseros previos, mantener la asignación vacía
-                    Assignment newAssignment = new Assignment();
-                    newAssignment.setTable(table.getId());
                     newAssignment.setWaiterWorkplan(new ArrayList<>());
-                    return newAssignment;
                 }
+                
+                return newAssignment;
             }).collect(Collectors.toList());
     
-            // Actualizar el Workplan con los nuevos assignments y reiniciarlo
-            workplan.setAssigment(updatedAssignments);
-            workplan.setPresent(true); // Reiniciar el estado del plan de trabajo
-            workplanRepository.save(workplan);
+            newWorkplan.setAssigment(copiedAssignments);
+    
+            // Guardar el nuevo workplan
+            workplanRepository.save(newWorkplan);
             return true;
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al reiniciar el plan de trabajo");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al copiar el plan de trabajo");
         }
+    }
+    
+    // Método auxiliar para generar el nombre de la copia (se mantiene igual)
+    private String generateCopyName(String originalName) {
+        // Buscar si ya tiene un número entre paréntesis al final
+        Pattern pattern = Pattern.compile("(.*?)(\\s*\\((\\d+)\\))?$");
+        Matcher matcher = pattern.matcher(originalName);
+        
+        if (matcher.matches()) {
+            String baseName = matcher.group(1);
+            String numberStr = matcher.group(3);
+            
+            if (numberStr != null) {
+                // Incrementar el número existente
+                int number = Integer.parseInt(numberStr) + 1;
+                return baseName.trim() + " (" + number + ")";
+            }
+        }
+        
+        // Si no tenía número, añadir (1)
+        return originalName.trim() + " (1)";
     }
     
     // //method to count the number of tables that one waiter has in a workplan
