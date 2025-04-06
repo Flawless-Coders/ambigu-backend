@@ -42,6 +42,8 @@ public class Order {
 
     private String waiter;
 
+    private String waiterId;
+
     private String workplan;
 
     private Opinion opinion;

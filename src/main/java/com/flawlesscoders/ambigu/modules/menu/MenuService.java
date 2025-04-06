@@ -77,7 +77,16 @@ public class MenuService {
             menu.setCategories(new ArrayList<>());
         }
 
-        return categoryRepository.findAllById(menu.getCategories());
+        List<Category> allCategories = categoryRepository.findAllById(menu.getCategories());
+        List<Category> activeCategories = new ArrayList<>();
+        
+        for(Category c : allCategories){
+            if(c.isStatus()){
+                activeCategories.add(c);
+            }
+        }
+
+        return activeCategories;
     }
 
     /**

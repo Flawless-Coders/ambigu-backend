@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import com.flawlesscoders.ambigu.modules.table.TableClientStatus;
 import com.flawlesscoders.ambigu.modules.table.TableRepository;
 import com.flawlesscoders.ambigu.modules.user.waiter.Waiter;
 import com.flawlesscoders.ambigu.modules.user.waiter.WaiterRepository;
+import com.flawlesscoders.ambigu.modules.user.waiter.WaiterService;
 import com.flawlesscoders.ambigu.modules.workplan.WorkplanService;
 import java.util.UUID;
 import java.util.Base64;
@@ -39,6 +41,7 @@ public class OrderService {
     private final WorkplanService workplanService;
     private final WaiterRepository waiterRepository;
     private final DishRepository dishRepository;
+    private final WaiterService waiterService;
     @Value("${frontend.url}")
     private String url;
     
@@ -79,8 +82,8 @@ public class OrderService {
             for(OrderDishes d : order.getDishes()){
                 Dish orderedDish = new Dish();
                 orderedDish = dishRepository.findById(d.getDishId()).orElse(null);
-                if(orderedDish != null && orderedDish.getImageBase64() != null){
-                    order.getDishes().get(counter).setImageBase64(orderedDish.getImageBase64());
+                if(orderedDish != null && orderedDish.getImageId() != null){
+                    order.getDishes().get(counter).setImageBase64(orderedDish.getImageId());
                 } 
                 counter++;
             }
@@ -138,6 +141,7 @@ public class OrderService {
                     order.setDishes(found.getModifiedDishes());
                     order.setTotal(found.getTotal());
                     order.setWaiter(found.getWaiter());
+                    order.setWaiterId(found.getWaiterId());
                     order.setTable(found.getTable());
                     order.setTableName(found.getTableName());
                     repository.save(order);
@@ -242,7 +246,12 @@ public class OrderService {
                             orderFeedbackDTO.getQualification(),
                             orderFeedbackDTO.getComment());
                     found.setOpinion(opinion);
+                    found.setToken(null);
                     repository.save(found);
+
+                    if(found.getWaiterId() != null){
+                        waiterService.updateWaiterRating(found.getWaiterId(), orderFeedbackDTO.getQualification());
+                    }
                     return found;
                 } else {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
@@ -287,7 +296,7 @@ public class OrderService {
         // Recorrer las mesas y obtener las órdenes finalizadas de cada una
         for (Table table : tables) {
             List<Order> tableOrders = repository.getFinalizedOrders(table.getId(),
-                    waiter.getName() + " " + waiter.getLastname_p() + " " + waiter.getLastname_m(), workplan);
+                    waiter.getId(), workplan);
             if (tableOrders != null && !tableOrders.isEmpty()) { // Verifica si la lista de órdenes no es null ni está
                                                                  // vacía
                 orders.addAll(tableOrders); // Agrega todas las órdenes de la mesa a la lista principal
@@ -312,8 +321,8 @@ public class OrderService {
             for (OrderDishes orderDishes : dishes) {
                 Dish orderedDish = new Dish();
                 orderedDish = dishRepository.findById(orderDishes.getDishId()).orElse(null);
-                if(orderedDish != null && orderedDish.getImageBase64() != null){
-                    orderDishes.setImageBase64(orderedDish.getImageBase64());
+                if(orderedDish != null && orderedDish.getImageId() != null){
+                    orderDishes.setImageBase64(orderedDish.getImageId());
                 }
 
                 boolean dishExists = false; 
