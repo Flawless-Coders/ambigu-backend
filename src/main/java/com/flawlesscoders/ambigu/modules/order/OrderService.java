@@ -296,7 +296,7 @@ public class OrderService {
         // Recorrer las mesas y obtener las órdenes finalizadas de cada una
         for (Table table : tables) {
             List<Order> tableOrders = repository.getFinalizedOrders(table.getId(),
-                    waiter.getName() + " " + waiter.getLastname_p() + " " + waiter.getLastname_m(), workplan);
+                    waiter.getId(), workplan);
             if (tableOrders != null && !tableOrders.isEmpty()) { // Verifica si la lista de órdenes no es null ni está
                                                                  // vacía
                 orders.addAll(tableOrders); // Agrega todas las órdenes de la mesa a la lista principal
