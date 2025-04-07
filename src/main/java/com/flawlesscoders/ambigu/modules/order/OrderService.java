@@ -286,24 +286,8 @@ public class OrderService {
     public List<Order> getFinalizedOrders(String waiterEmail) {
         Waiter waiter = waiterRepository.findByEmail(waiterEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
-
-        // Obtener las mesas asignadas al mesero
-        List<Table> tables = workplanService.getTablesByWaiterInWorkplan(waiterEmail);
         String workplan = workplanService.getIdWorkplanPresent();
-
-        List<Order> orders = new ArrayList<>();
-
-        // Recorrer las mesas y obtener las órdenes finalizadas de cada una
-        for (Table table : tables) {
-            List<Order> tableOrders = repository.getFinalizedOrders(table.getId(),
-                    waiter.getId(), workplan);
-            if (tableOrders != null && !tableOrders.isEmpty()) { // Verifica si la lista de órdenes no es null ni está
-                                                                 // vacía
-                orders.addAll(tableOrders); // Agrega todas las órdenes de la mesa a la lista principal
-            }
-        }
-
-        // Retorna la lista de órdenes, o una lista vacía si no hay órdenes
+        List<Order> orders = repository.getFinalizedOrders(waiter.getId(), workplan);
         return !orders.isEmpty() ? orders : Collections.emptyList();
     }
 
