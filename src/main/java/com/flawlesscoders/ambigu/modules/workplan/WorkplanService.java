@@ -406,6 +406,7 @@ public class WorkplanService {
 
             for (Order order : orders) {
                 order.setFinalized(true);
+                order.setToken(null);
                 orderRepository.save(order);
             }
 

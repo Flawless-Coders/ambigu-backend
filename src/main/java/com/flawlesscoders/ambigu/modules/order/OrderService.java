@@ -361,7 +361,7 @@ public class OrderService {
             if (order != null) {
                 return order;
             } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la orden");
+               return null;
             }
         } catch (Exception e) {
             e.printStackTrace();
