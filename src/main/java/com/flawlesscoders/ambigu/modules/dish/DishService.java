@@ -57,6 +57,14 @@ public class DishService {
      * @throws ResponseStatusException if the data is invalid.
      */
     public Dish saveDish(Dish dish) {
+        List<Dish> allDishes = dishRepository.findAll();
+
+        for(Dish d : allDishes){
+            if(dish.getName().replace(" ", "").toLowerCase().equals(d.getName().replace(" ", "").toLowerCase())){
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este nombre ya existe");
+            }
+        }
+
         if (dish.getName() == null || dish.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The dish name cannot be empty.");
         }
@@ -84,6 +92,16 @@ public class DishService {
      */
     public Dish updateDish(String id, Dish updatedDish) {
         Dish existingDish = getDishById(id);
+        List<Dish> allDishes = dishRepository.findAll();
+
+        allDishes.remove(existingDish);
+
+        for(Dish d : allDishes){
+            if(updatedDish.getName().replace(" ", "").toLowerCase().equals(d.getName().replace(" ", "").toLowerCase())){
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este nombre ya existe");
+            }
+        }
+
         if (updatedDish.getName() == null || updatedDish.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The dish name cannot be empty.");
         }
