@@ -17,8 +17,8 @@ public interface OrderRepository extends MongoRepository<Order, String>{
     Order getCurrentOrder(String tableId);
 
     //Que sean finalizadas por el mesero y en el workplan activo
-    @Query("{ 'finalized': true, 'table': ?0, 'deleted':false, 'waiterId':?1, 'workplan':?2}")
-    List<Order> getFinalizedOrders(String tableId, String waiterId, String workplan);
+    @Query("{ 'finalized': true, 'deleted':false, 'waiterId':?0, 'workplan':?1}")
+    List<Order> getFinalizedOrders(String waiterId, String workplan);
 
     @Query("{'table': ?tableId}")
     List<Order> getOrdersByTable(String tableId);

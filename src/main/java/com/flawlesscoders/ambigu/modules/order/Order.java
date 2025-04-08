@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,6 +17,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Document(collection = "orders")
+@CompoundIndexes({
+    @CompoundIndex(name = "idx_finalized_table_deleted", def = "{'finalized': 1, 'table': 1, 'deleted': 1}"),
+    @CompoundIndex(name = "idx_finalized_deleted_waiter_workplan", def = "{'finalized': 1, 'deleted': 1, 'waiterId': 1, 'workplan': 1}")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
