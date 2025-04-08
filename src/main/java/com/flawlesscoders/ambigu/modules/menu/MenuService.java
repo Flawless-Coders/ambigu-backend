@@ -149,6 +149,13 @@ public class MenuService {
      * @throws ResponseStatusException If the data is invalid.
      */
     public Menu save(Menu menu) {
+        List<Menu> allMenus = menuRepository.findAll();
+        for (Menu m : allMenus) {
+            if (menu.getName().replace(" ", "").toLowerCase().equals(m.getName().replace(" ", "").toLowerCase())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este nombre ya existe");
+            }
+        }
+
         if (menu.getName() == null || menu.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre no puede estar vacío");
         }
@@ -174,6 +181,16 @@ public class MenuService {
         Menu existingMenu = menuRepository
                 .findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
+
+        List<Menu> allMenus = menuRepository.findAll();
+        
+        allMenus.remove(existingMenu);
+
+        for (Menu m : allMenus) {
+            if (name.replace(" ", "").toLowerCase().equals(m.getName().replace(" ", "").toLowerCase())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este nombre ya existe");
+            }
+        }
 
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del menú no puede estar vacío");
