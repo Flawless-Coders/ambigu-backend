@@ -1,5 +1,7 @@
 package com.flawlesscoders.ambigu.utils.security;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,8 +43,12 @@ public class SecurityConfig {
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
+
         config.setAllowCredentials(true);
-        config.addAllowedOriginPattern("*");
+        config.setAllowedOrigins(List.of(
+            "http://localhost:5173", // Vite (desarrollo local)
+            "http://ambigu-frontend.s3-website-us-east-1.amazonaws.com" // S3 frontend público
+        ));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);

@@ -11,7 +11,7 @@
 	<groupId>com.flawlesscoders</groupId>
 	<artifactId>ambigu</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<name>ambigu</name>
 	<description>Sistema de gestión de restaurantes con Spring Boot y MongoDB</description>
 	<url/>
@@ -111,6 +111,10 @@
 
 	<build>
 		<plugins>
+		    <plugin>
+            	<groupId>org.springframework.boot</groupId>
+            	<artifactId>spring-boot-maven-plugin</artifactId>
+        	</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
