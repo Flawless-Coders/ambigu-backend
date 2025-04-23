@@ -6,7 +6,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
 public interface TableRepository extends MongoRepository<Table, String>{
-    List<Table> findByIsEnabledTrue();
+    @Query("{ 'isEnabled': true }")
+    List<Table> findAllEnabledTables();
+
 
     List<Table> findByIsEnabledFalse(); 
 

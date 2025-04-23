@@ -1,5 +1,6 @@
 package com.flawlesscoders.ambigu.modules.table;
 
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -97,18 +98,26 @@ public class TableService {
     }
 
 
-    //method to get all enabled tables 
-    public List<Table> getEnabledTables(){
+   // method to get all enabled tables, sorted with OCCUPIED first
+    public List<Table> getEnabledTables() {
         try {
-            if (tableRepository.findByIsEnabledTrue().isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No hay mesas habilitadas");
-            }else{
-                return tableRepository.findByIsEnabledTrue();
+            List<Table> enabledTables = tableRepository.findAllEnabledTables();
+
+            if (enabledTables.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay mesas habilitadas");
             }
+
+            // Ordenar con OCCUPIED primero
+            enabledTables.sort(Comparator.comparing(
+                table -> table.getTableClientStatus() != TableClientStatus.OCCUPIED
+            ));
+
+            return enabledTables;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Error al obtener las mesas habilitadas");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas habilitadas");
         }
     }
+
 
     //method to get all enabled tables 
     public List<Table> getDisabledTables(){

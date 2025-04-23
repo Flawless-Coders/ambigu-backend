@@ -8,6 +8,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import com.flawlesscoders.ambigu.modules.dish.Dish;
 import com.flawlesscoders.ambigu.modules.dish.DishRepository;
+import com.flawlesscoders.ambigu.utils.config.FileService;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -19,6 +20,7 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final DishRepository dishRepository;
+    private final FileService fileService;
 
     private void validateCategoryName(String name) {
         if (name == null || name.isBlank()) {
@@ -70,12 +72,8 @@ public class CategoryService {
         category.setStatus(true);
     
         if (image != null && !image.isEmpty()) {
-            try {
-                String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
-                category.setImageBase64(base64Image);
-            } catch (IOException e) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al procesar la imagen.");
-            }
+            String imageId = fileService.saveFile(image);
+            category.setImageId(imageId);
         }
     
         return categoryRepository.save(category);
@@ -91,13 +89,16 @@ public class CategoryService {
     public Category updateCategory(String id, Category updatedCategory) {
         Category existingCategory = getCategoryById(id);
     
-        if (updatedCategory.getName() != null && !updatedCategory.getName().isBlank()) {
-            validateCategoryName(updatedCategory.getName());
-            existingCategory.setName(updatedCategory.getName().trim());
+        String newName = updatedCategory.getName();
+        if (newName != null && !newName.isBlank()) {
+            newName = newName.trim();
+            if (!existingCategory.getName().equalsIgnoreCase(newName)) {
+                validateCategoryName(newName);
+                existingCategory.setName(newName);
+            }
         }
     
         existingCategory.setStatus(updatedCategory.isStatus());
-    
         return categoryRepository.save(existingCategory);
     }
 
@@ -127,14 +128,18 @@ public class CategoryService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen no puede estar vacía.");
         }
 
-        try {
-            Category category = getCategoryById(id);
-            String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
-            category.setImageBase64(base64Image);
-            categoryRepository.save(category);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al convertir la imagen a Base64.");
+        Category category = getCategoryById(id);
+
+        // Borrar imagen anterior si existe
+        if (category.getImageId() != null) {
+            fileService.deleteFile(category.getImageId());
         }
+    
+        // Guardar nueva imagen
+        String imageId = fileService.saveFile(image);
+        category.setImageId(imageId);
+    
+        categoryRepository.save(category);
     }
 
     /**

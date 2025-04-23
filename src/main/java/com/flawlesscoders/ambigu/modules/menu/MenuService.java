@@ -23,7 +23,7 @@ public class MenuService {
     private final DishRepository dishRepository;
     private final CategoryRepository categoryRepository;
 
-     @Value("${frontend.url}")
+    @Value("${frontend.url}")
     private String url;
 
     /**
@@ -45,7 +45,7 @@ public class MenuService {
      */
     public List<Category> getCategoriesByMenu() {
         Menu menu = menuRepository.getCurrentMenu()
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
 
         if (menu.getCategories() == null) {
             menu.setCategories(new ArrayList<>());
@@ -53,9 +53,9 @@ public class MenuService {
 
         List<Category> allCategories = categoryRepository.findAllById(menu.getCategories());
         List<Category> activeCategories = new ArrayList<>();
-        
-        for(Category c : allCategories){
-            if(c.isStatus()){
+
+        for (Category c : allCategories) {
+            if (c.isStatus()) {
                 activeCategories.add(c);
             }
         }
@@ -77,7 +77,16 @@ public class MenuService {
             menu.setCategories(new ArrayList<>());
         }
 
-        return categoryRepository.findAllById(menu.getCategories());
+        List<Category> allCategories = categoryRepository.findAllById(menu.getCategories());
+        List<Category> activeCategories = new ArrayList<>();
+
+        for (Category c : allCategories) {
+            if (c.isStatus()) {
+                activeCategories.add(c);
+            }
+        }
+
+        return activeCategories;
     }
 
     /**
@@ -114,8 +123,8 @@ public class MenuService {
      * @return A list of dishes in the specified category.
      */
     public List<Dish> getDishesByCategory(String categoryId) {
-         Menu menu = menuRepository.getCurrentMenu()
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
+        Menu menu = menuRepository.getCurrentMenu()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
 
         if (menu.getDishes() == null || menu.getDishes().isEmpty()) {
             return new ArrayList<>();
@@ -140,6 +149,13 @@ public class MenuService {
      * @throws ResponseStatusException If the data is invalid.
      */
     public Menu save(Menu menu) {
+        List<Menu> allMenus = menuRepository.findAll();
+        for (Menu m : allMenus) {
+            if (menu.getName().replace(" ", "").toLowerCase().equals(m.getName().replace(" ", "").toLowerCase())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este nombre ya existe");
+            }
+        }
+
         if (menu.getName() == null || menu.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre no puede estar vacío");
         }
@@ -166,6 +182,16 @@ public class MenuService {
                 .findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
 
+        List<Menu> allMenus = menuRepository.findAll();
+        
+        allMenus.remove(existingMenu);
+
+        for (Menu m : allMenus) {
+            if (name.replace(" ", "").toLowerCase().equals(m.getName().replace(" ", "").toLowerCase())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este nombre ya existe");
+            }
+        }
+
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre del menú no puede estar vacío");
         }
@@ -191,15 +217,19 @@ public class MenuService {
      */
     public boolean assingAsCurrent(String id) {
         Menu currentMenu = menuRepository.getCurrentMenu()
-        .orElse(null);
-        if (currentMenu == null) {
-            Menu menu = menuRepository.findById(id)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
-            menu.setStatus(true);
-            menuRepository.save(menu);
-            return true;
+                .orElse(null);
+
+        Menu menu = menuRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el menú"));
+
+        if (currentMenu != null) {
+            currentMenu.setStatus(false);
+            menuRepository.save(currentMenu);
         }
-        return false;
+        menu.setStatus(true);
+        menuRepository.save(menu);
+        return true;
+
     }
 
     /**
@@ -234,7 +264,7 @@ public class MenuService {
 
             menuRepository.save(menu);
             return true;
-        }else{
+        } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El platillo ya está en el menú");
         }
     }
@@ -289,60 +319,64 @@ public class MenuService {
         return menuRepository.findAllOrderByStatusDesc();
     }
 
-        /**
+    /**
      * Assigns as a current menu
      * 
      * @param id The ID of the menu.
      * @throws ResponseStatusException If the menu is not found.
      */
     public boolean inactivateMenu(String id) {
-            Menu menu = menuRepository.findById(id)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu no encontrado"));
-            menu.setStatus(false);
-            menuRepository.save(menu);
-            return true;
+        Menu menu = menuRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu no encontrado"));
+        menu.setStatus(false);
+        menuRepository.save(menu);
+        return true;
     }
 
-
-    public boolean isCurrentMenu(){
+    public boolean isCurrentMenu() {
         Menu currentMenu = menuRepository.getCurrentMenu().orElse(null);
         return currentMenu != null;
     }
 
-    public Menu getCurrentMenu(){
+    public Menu getCurrentMenu() {
         Menu currentMenu = menuRepository.getCurrentMenu().orElse(null);
         return currentMenu;
     }
 
-    public List<MenuDTO> getCategoriesAndDishes(){
+    public List<MenuDTO> getCategoriesAndDishes() {
         List<MenuDTO> dishesByCategory = new ArrayList<>();
         Menu currentMenu = menuRepository.getCurrentMenu().orElse(null);
 
-        for(String categoryId : currentMenu.getCategories()){
+        for (String categoryId : currentMenu.getCategories()) {
             Category category = new Category();
             MenuDTO categoryAndDishes = new MenuDTO();
             List<Dish> dishesList = new ArrayList<>();
-            
-            category = categoryRepository.findById(categoryId).orElse(null);
-            categoryAndDishes.setCategory(category);
-            
-            for(String dishId : currentMenu.getDishes()){
-                Dish dish = new Dish();
-                dish = dishRepository.findById(dishId).orElse(null);
 
-                if(dish.getCategory().equals(category.getId()) && dish.isStatus()){
-                    dishesList.add(dish);
+            category = categoryRepository.findById(categoryId).orElse(null);
+            if (category.isStatus()) {
+                categoryAndDishes.setCategory(category);
+
+                for (String dishId : currentMenu.getDishes()) {
+                    Dish dish = new Dish();
+                    dish = dishRepository.findById(dishId).orElse(null);
+
+                    if (dish.getCategory().equals(category.getId()) && dish.isStatus() && category.isStatus()) {
+                        dishesList.add(dish);
+                    }
+
+                }
+                if (dishesList.size() > 0) {
+                    categoryAndDishes.setDishes(dishesList);
+                    dishesByCategory.add(categoryAndDishes);
                 }
 
             }
-            categoryAndDishes.setDishes(dishesList);
-            dishesByCategory.add(categoryAndDishes);
         }
-        
+
         return dishesByCategory;
     }
 
-    public String getMenuURL(){
-        return url+"/public-menu";
+    public String getMenuURL() {
+        return url + "/public-menu";
     }
 }

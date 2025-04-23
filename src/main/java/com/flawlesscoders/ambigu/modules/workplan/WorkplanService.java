@@ -406,6 +406,7 @@ public class WorkplanService {
 
             for (Order order : orders) {
                 order.setFinalized(true);
+                order.setToken(null);
                 orderRepository.save(order);
             }
 
@@ -905,49 +906,53 @@ public class WorkplanService {
     }
 
     public List<Workplan> findRecentWorkplans() {
-    try {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_YEAR, -5); // Fecha hace 5 días
-        Date fiveDaysAgo = calendar.getTime();
+        try {
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DAY_OF_YEAR, -5); // Fecha hace 5 días
+            Date fiveDaysAgo = calendar.getTime();
 
-        return workplanRepository.findByDateAfter(fiveDaysAgo);
-    } catch (Exception e) {
-        e.printStackTrace();
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener workplans recientes");
+            List<Workplan> workplans = workplanRepository.findByDateAfter(fiveDaysAgo);
+            
+            // Ordenar los workplans por fecha de forma ascendente (más reciente primero)
+            workplans.sort((w1, w2) -> w2.getDate().compareTo(w1.getDate()));
+            
+            return workplans;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener workplans recientes");
+        }
     }
-}
+
+    public List<Table> getTablesByWaiterInWorkplan(String waiterEmail) {
+        try {
+            // Buscar al mesero por email
+            Waiter waiter = waiterRepository.findByEmail(waiterEmail)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+
+            String waiterId = waiter.getId(); // Obtenemos el ID del mesero
+
+            // Buscar el Workplan activo
+            Workplan workplan = workplanRepository.findByIsPresent(true)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un plan de trabajo activo"));
 
 
-public List<Table> getTablesByWaiterInWorkplan(String waiterEmail) {
-    try {
-        // Buscar al mesero por email
-        Waiter waiter = waiterRepository.findByEmail(waiterEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesero no encontrado"));
+            // Filtrar las mesas donde el `waiterId` está asignado en algún WaiterWorkplan y la hora actual está dentro del rango de horario
+            List<Table> tables = workplan.getAssigment().stream()
+                    .filter(assignment -> {
+                        // Verificar si el mesero está asignado a esta mesa y la hora actual está dentro de su horario
+                        return assignment.getWaiterWorkplan().stream()
+                                .anyMatch(waiterWorkplan -> { return waiterWorkplan.getWaiter().equals(waiterId);
+                                });
+                    })
+                    .map(assignment -> tableRepository.findById(assignment.getTable())
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada")))
+                    .collect(Collectors.toList());
 
-        String waiterId = waiter.getId(); // Obtenemos el ID del mesero
-
-        // Buscar el Workplan activo
-        Workplan workplan = workplanRepository.findByIsPresent(true)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay un plan de trabajo activo"));
-
-
-        // Filtrar las mesas donde el `waiterId` está asignado en algún WaiterWorkplan y la hora actual está dentro del rango de horario
-        List<Table> tables = workplan.getAssigment().stream()
-                .filter(assignment -> {
-                    // Verificar si el mesero está asignado a esta mesa y la hora actual está dentro de su horario
-                    return assignment.getWaiterWorkplan().stream()
-                            .anyMatch(waiterWorkplan -> { return waiterWorkplan.getWaiter().equals(waiterId);
-                            });
-                })
-                .map(assignment -> tableRepository.findById(assignment.getTable())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mesa no encontrada")))
-                .collect(Collectors.toList());
-
-        return tables;
-    } catch (Exception e) {
-        e.printStackTrace();
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas asignadas al mesero en el plan de trabajo");
+            return tables;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al obtener las mesas asignadas al mesero en el plan de trabajo");
+        }
     }
-}
 }
 

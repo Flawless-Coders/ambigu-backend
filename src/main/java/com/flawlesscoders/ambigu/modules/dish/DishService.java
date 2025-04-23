@@ -14,6 +14,8 @@ import com.flawlesscoders.ambigu.modules.category.Category;
 import com.flawlesscoders.ambigu.modules.category.CategoryRepository;
 import com.flawlesscoders.ambigu.modules.menu.Menu;
 import com.flawlesscoders.ambigu.modules.menu.MenuRepository;
+import com.flawlesscoders.ambigu.utils.config.FileService;
+
 import java.util.Base64;
 import java.util.List;
 
@@ -24,6 +26,7 @@ public class DishService {
     private final DishRepository dishRepository;
     private final MenuRepository menuRepository;
     private final CategoryRepository categoryRepository;
+    private final FileService fileService;
 
     /**
      * Retrieves all dishes.
@@ -54,6 +57,14 @@ public class DishService {
      * @throws ResponseStatusException if the data is invalid.
      */
     public Dish saveDish(Dish dish) {
+        List<Dish> allDishes = dishRepository.findAll();
+
+        for(Dish d : allDishes){
+            if(dish.getName().replace(" ", "").toLowerCase().equals(d.getName().replace(" ", "").toLowerCase())){
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este nombre ya existe");
+            }
+        }
+
         if (dish.getName() == null || dish.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The dish name cannot be empty.");
         }
@@ -81,6 +92,16 @@ public class DishService {
      */
     public Dish updateDish(String id, Dish updatedDish) {
         Dish existingDish = getDishById(id);
+        List<Dish> allDishes = dishRepository.findAll();
+
+        allDishes.remove(existingDish);
+
+        for(Dish d : allDishes){
+            if(updatedDish.getName().replace(" ", "").toLowerCase().equals(d.getName().replace(" ", "").toLowerCase())){
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este nombre ya existe");
+            }
+        }
+
         if (updatedDish.getName() == null || updatedDish.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The dish name cannot be empty.");
         }
@@ -98,7 +119,6 @@ public class DishService {
         existingDish.setDescription(updatedDish.getDescription());
         existingDish.setCategory(updatedDish.getCategory());
         existingDish.setPrice(updatedDish.getPrice());
-        existingDish.setImageBase64(updatedDish.getImageBase64());
         return dishRepository.save(existingDish);
     }
 
@@ -139,15 +159,18 @@ public class DishService {
         if (image == null || image.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen no puede estar vacía.");
         }
+    
+        Dish dish = getDishById(id);
 
-        try {
-            Dish dish = getDishById(id);
-            String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
-            dish.setImageBase64(base64Image);
-            dishRepository.save(dish);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al convertir la imagen a Base64.");
+        if (dish.getImageId() != null && !dish.getImageId().isEmpty()) {
+            fileService.deleteFile(dish.getImageId());
         }
+    
+        String newFileId = fileService.saveFile(image);
+    
+        // Actualizar el platillo
+        dish.setImageId(newFileId);         
+        dishRepository.save(dish);
     }
 
     /**

@@ -27,6 +27,9 @@ public class Category {
     @Schema(description = "Base64 representation of the category image.")
     private String imageBase64;
 
+    @Schema(description = "Identifier of the image stored in GridFS.")
+    private String imageId;
+
     @Schema(description = "Indicates whether a category is enabled or disabled.")
     private boolean status;
 }

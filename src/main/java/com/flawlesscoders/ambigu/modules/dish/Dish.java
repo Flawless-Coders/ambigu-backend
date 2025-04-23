@@ -33,6 +33,9 @@ public class Dish {
     @Schema(description = "Base64 representation of the dish image.")
     private String imageBase64;
 
+    @Schema(description = "Identifier of the image stored in GridFS.")
+    private String imageId;
+
     @Schema(description = "Indicates whether the dish is active or inactive.")
     private boolean status;
 
