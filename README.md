@@ -58,8 +58,8 @@ http://localhost:8080/swagger-ui.html
 
 ## 🧑‍💻 Desarrollado por
 Flawless Coders:
-    - Hernández Sánchez Katia Alexandra
-    - Higareda Vázquez María del Pilar
-    - Joaquín Landa Martín Antonio
-    - León Flores Axel Daniel
-    - Miranda Roldán Jose Luis 
+- Hernández Sánchez Katia Alexandra
+- Higareda Vázquez María del Pilar
+- Joaquín Landa Martín Antonio
+- León Flores Axel Daniel
+- Miranda Roldán José Luis
